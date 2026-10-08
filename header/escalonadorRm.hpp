@@ -1,10 +1,10 @@
 #pragma once
 #include <iostream>
-#include <string>
+#include "escalonador.hpp"
 
-class Escalonador{
+class EscalonadorRM: public Escalonador{
     private:
         int quantum; // passado como parâmetro da simulacao
     public:
-        Escalonador();
+        EscalonadorRM();
 };

@@ -1,12 +1,17 @@
-#include "relogio.hpp"
+#include "header/relogio.hpp"
 
-Relogio::Relogio(){}
-Relogio::~Relogio(){}
-void Relogio::incrementa(){
-    tick+=taxa;
+Relogio::Relogio() {}
+Relogio::~Relogio() {}
+void Relogio::incrementa()
+{
+    tick += 1;
 }
-void Relogio::decrementa(){
-    if(tick>=taxa){
-        tick-=taxa;
+void Relogio::decrementa()
+{
+    if (tick > 0)
+    {
+        tick -= 1;
     }
 }
+
+int Relogio::getTick() const{ return tick; }
