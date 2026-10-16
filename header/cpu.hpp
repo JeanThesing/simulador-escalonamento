@@ -10,16 +10,20 @@ private:
     bool emUso = 0;
     bool ligado = 1;
     int tempoDesligado = 0; // sera atualizado pelo tick do sistema (int)
+    Tarefa* tarefaAtual = nullptr;
 public:
     CPU( int id );
     ~CPU();
-    void ocupar();
-    void liberar();
-    void ligar();
-    void desligar();
-    void switchLigado();
+    void ocupar(); //emUso = true;
+    void liberar(); // emUso = FALSE;
+    void ligar(); // ligado = true;
+    void desligar(); // ligado = false;
     void incrementaTempoDesligado(int tick); // sera incrementado de acordo com o tick
-    void executarTarefa(Tarefa* tarefa);
+    void atribuirTarefa(Tarefa* tarefa); // executa a tarefa, estado para "EXECUTANDO" e ocupa CPU
+    void removerTarefa(); // remove a tarefa atual, estado para "TERMINADA" e libera CPU
+    Tarefa* getTarefaAtual() const;
+    int estaLivre() const;
+    void executarTick();
 };
 
 //fila de prontos

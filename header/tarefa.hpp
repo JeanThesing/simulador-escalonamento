@@ -23,6 +23,7 @@ private:
     Control Block (TCB);*/
     int ingresso; // indica o instante de tempo que a tarefa foi criada;
     int duracao;  // indica o tempo de execução da tarefa;
+    int tempoRestante; //tempo restante da execucao da tarefa. Base é = duracao.
     int periodo;  /*indica o período no qual uma tarefa é ativada: valores maiores que
 zero indicam que a tarefa tem ativação periódica a cada “n” ticks de relógio; valor
 zero indica que a tarefa é aperiódica, ou seja, é ativada apenas uma vez no momento
@@ -40,26 +41,38 @@ public:
     Tarefa(
         int id,
         std::string cor,
-        int ingresso,
+        int ingresso, //passado pelo relogio do sistema
         int duracao,
         int periodo,
         int prazo
     );
     ~Tarefa();
+    //id
     int getId() const;
     void setId(int id);
+    //estado
     EstadoTarefa getEstado() const;
     void setEstado(EstadoTarefa estado);
+    //ingresso
     int getIngresso() const;
     void setIngresso(int ingresso);
+    //duracao
     int getDuracao() const;
     void setDuracao(int duracao);
+    //periodo
     int getPeriodo() const;
     void setPeriodo(int periodo);
+    //prazo
     int getPrazo() const;
     void setPrazo(int prazo);
+    //cor
     std::string getCor() const;
-    void setCor();
+    void setCor(const std::string& cor);
+    // idcpu
     int getIdCPU() const;
     void setIdCPU(int idCPU);
+    //tempo restante
+    int getTempoRestante() const;
+    void setTempoRestante(int tempoRestante);
+    void executarTick();   
 };
