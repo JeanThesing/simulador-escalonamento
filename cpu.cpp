@@ -80,3 +80,20 @@ void CPU::executarTick(){
         liberar();
     }
 }
+
+// getters e setters:
+int CPU::getId() const {
+    return id;
+}
+
+bool CPU::getEmUso() const {
+    return emUso;
+}
+
+bool CPU::getLigado() const {
+    return ligado;
+}
+
+int CPU::getTempoDesligado() const {
+    return tempoDesligado;
+}

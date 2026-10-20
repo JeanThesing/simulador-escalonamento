@@ -55,9 +55,25 @@ int Tarefa::getTempoRestante() const { return tempoRestante; }
 
 void Tarefa::setTempoRestante(int tempoRestante) { this->tempoRestante = tempoRestante; }
 
-void Tarefa::executarTick() {
-    if (estado == EstadoTarefa::EXECUTANDO
-        && tempoRestante > 0) {
+void Tarefa::executarTick()
+{
+    if (estado == EstadoTarefa::EXECUTANDO && tempoRestante > 0)
+    {
         tempoRestante--;
-    } //se a tarefa estiver executando e o tempo restante maior q 0, decremente o tempo restante
+    } // se a tarefa estiver executando e o tempo restante maior q 0, decremente o tempo restante
+}
+
+bool Tarefa::deveExecutar(int tick) const
+{
+    return (execucoes < 10) && //Verifica se a tarefa ainda não alcançou o limite de dez ativações.
+           (tick >= ingresso) && //Impede que a tarefa seja ativada antes do instante de ingresso.
+           ((tick - ingresso) % periodo == 0); //verifica se o tick atual corresponde a um instante de ativação periódica. (modulo pra saber se o tick é multiplo do periodo, pra saber se deve ativar ou nao)
+
+}
+
+void Tarefa::ativar(int tick) {
+    tempoRestante = duracao;
+    prazoAbsoluto = tick + prazo; //prazo da tarefa de acordo com o prazo base e o tick atual (deadline absoluto)
+    estado = EstadoTarefa::PRONTA; //tarefa esta pronta (entra na fila de prontas)
+    execucoes++;
 }

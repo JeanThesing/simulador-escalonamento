@@ -1,0 +1,4 @@
+C:/utfpr/projetoSO/build/CMakeFiles/main.dir
+C:/utfpr/projetoSO/build/CMakeFiles/testeGrafico.dir
+C:/utfpr/projetoSO/build/CMakeFiles/edit_cache.dir
+C:/utfpr/projetoSO/build/CMakeFiles/rebuild_cache.dir

@@ -37,6 +37,9 @@ tempo de execução da tarefa for igual ou maior que a duração da tarefa.*/
     /*lista_eventos indica uma lista de eventos que ocorre durante a execução
 da tarefa.
 */
+    int prazoAbsoluto = -1; //prazo absoluto da tarefa, calculado a partir do tick de ingresso + prazo relativo
+    int execucoes = 0; // a tarefa finaliza quando executa 10 vezes (por ser periodica)
+    bool perdeuPrazo = false; // indica se a tarefa perdeu o prazo ou nao, para ser usado no gantt
 public:
     Tarefa(
         int id,
@@ -74,5 +77,7 @@ public:
     //tempo restante
     int getTempoRestante() const;
     void setTempoRestante(int tempoRestante);
-    void executarTick();   
+    void executarTick(); 
+    bool deveExecutar(int tick) const; 
+    void ativar(int tick); // ativa a tarefa, setando o estado para PRONTA e calculando o prazo absoluto
 };

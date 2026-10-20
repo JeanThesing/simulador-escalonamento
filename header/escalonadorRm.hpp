@@ -2,11 +2,9 @@
 #include <iostream>
 #include "escalonador.hpp"
 
-class EscalonadorRM: public Escalonador{
+class EscalonadorRM : public Escalonador
+{
 public:
-    void escalonar(
-        std::vector<Tarefa>& tarefas,
-        std::vector<CPU>& cpus,
-        std::queue<int>& filaDeProntas
-    ) override;
+    virtual Tarefa *selecionar(
+        const std::vector<Tarefa *> &prontas) override; // seleciona proxima tarefa a ser executada, de acordo com a politica de escalonamento
 };
