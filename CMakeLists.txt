@@ -16,13 +16,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # =========================
 
 set(CORE_SOURCES
-    cpu.cpp
-    relogio.cpp
-    tarefa.cpp
-    escalonadorRm.cpp
-    escalonadorEdf.cpp
-    simulador.cpp
-    leitorConfig.cpp
+    src/cpu.cpp
+    src/relogio.cpp
+    src/tarefa.cpp
+    src/escalonadorRm.cpp
+    src/escalonadorEdf.cpp
+    src/simulador.cpp
+    src/leitorConfig.cpp
 )
 
 # =========================
@@ -30,12 +30,12 @@ set(CORE_SOURCES
 # =========================
 
 add_executable(main
-    main.cpp
+    src/main.cpp
     ${CORE_SOURCES}
 )
 
 target_include_directories(main PRIVATE
-    header
+    src/header
 )
 
 # =========================
@@ -43,7 +43,7 @@ target_include_directories(main PRIVATE
 # =========================
 
 add_executable(testeGrafico
-    testeGrafico.cpp
+    src/testeGrafico.cpp
 
     external/imgui/imgui.cpp
     external/imgui/imgui_draw.cpp
@@ -54,7 +54,7 @@ add_executable(testeGrafico
 )
 
 target_include_directories(testeGrafico PRIVATE
-    header
+    src/header
     external/imgui
     external/rlImGui
 )

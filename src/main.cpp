@@ -1,10 +1,46 @@
 #include "header/simulador.hpp"
+#include "header/leitorConfig.hpp"
 using namespace std;
 
-int main()
+/*int main()
 {
     Simulador simulador(15, 5, "RM");
     simulador.criaCPUS();
     simulador.criaTarefas();
+    return 0;
+}*/
+
+//teste leitor
+int main()
+{
+    Configuracao config;
+    // tenta carregar o arquivo
+    bool carregou = carregarConfiguracao("tests/config.txt", config);
+    // mostra os erros encontrados
+    for (string erro : config.erros)
+        cout << "ERRO: " << erro << endl;
+    // Mostra os avisos encontrados
+    for (string aviso : config.avisos)
+        cout << "AVISO: " << aviso << endl;
+    // Encerra se houver erros
+    if (!carregou)
+        return 1;
+
+    // mostra config lidas
+    cout << "Algoritmo: " << config.algoritmo << endl;
+    cout << "Quantum: " << config.quantum << endl;
+    cout << "CPUs:" << config.qtdeCpus << endl;
+    cout << "Tarefas: " << config.tarefas.size() << endl;
+
+    // mostra os dados de cada tarefa
+    for (const Tarefa &tarefa : config.tarefas)
+    {
+        cout << "\nTarefa " << tarefa.getId() << endl;
+        cout << "Cor: " << tarefa.getCor() << endl;
+        cout << "Ingresso: " << tarefa.getIngresso() << endl;
+        cout << "Duracao: " << tarefa.getDuracao() << endl;
+        cout << "Periodo: " << tarefa.getPeriodo() << endl;
+        cout << "Prazo: " << tarefa.getPrazo() << endl;
+    }
     return 0;
 }

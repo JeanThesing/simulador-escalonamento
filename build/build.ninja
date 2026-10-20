@@ -44,60 +44,68 @@ cmake_ninja_workdir = C$:/utfpr/projetoSO/build/
 
 build cmake_object_order_depends_target_main: phony || .
 
-build CMakeFiles/main.dir/main.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/main.cpp || cmake_object_order_depends_target_main
-  DEP_FILE = CMakeFiles\main.dir\main.cpp.obj.d
+build CMakeFiles/main.dir/src/main.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/src/main.cpp || cmake_object_order_depends_target_main
+  DEP_FILE = CMakeFiles\main.dir\src\main.cpp.obj.d
   FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/header
+  INCLUDES = -IC:/utfpr/projetoSO/src/header
   OBJECT_DIR = CMakeFiles\main.dir
-  OBJECT_FILE_DIR = CMakeFiles\main.dir
+  OBJECT_FILE_DIR = CMakeFiles\main.dir\src
   TARGET_SUPPORT_DIR = CMakeFiles\main.dir
 
-build CMakeFiles/main.dir/cpu.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/cpu.cpp || cmake_object_order_depends_target_main
-  DEP_FILE = CMakeFiles\main.dir\cpu.cpp.obj.d
+build CMakeFiles/main.dir/src/cpu.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/src/cpu.cpp || cmake_object_order_depends_target_main
+  DEP_FILE = CMakeFiles\main.dir\src\cpu.cpp.obj.d
   FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/header
+  INCLUDES = -IC:/utfpr/projetoSO/src/header
   OBJECT_DIR = CMakeFiles\main.dir
-  OBJECT_FILE_DIR = CMakeFiles\main.dir
+  OBJECT_FILE_DIR = CMakeFiles\main.dir\src
   TARGET_SUPPORT_DIR = CMakeFiles\main.dir
 
-build CMakeFiles/main.dir/relogio.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/relogio.cpp || cmake_object_order_depends_target_main
-  DEP_FILE = CMakeFiles\main.dir\relogio.cpp.obj.d
+build CMakeFiles/main.dir/src/relogio.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/src/relogio.cpp || cmake_object_order_depends_target_main
+  DEP_FILE = CMakeFiles\main.dir\src\relogio.cpp.obj.d
   FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/header
+  INCLUDES = -IC:/utfpr/projetoSO/src/header
   OBJECT_DIR = CMakeFiles\main.dir
-  OBJECT_FILE_DIR = CMakeFiles\main.dir
+  OBJECT_FILE_DIR = CMakeFiles\main.dir\src
   TARGET_SUPPORT_DIR = CMakeFiles\main.dir
 
-build CMakeFiles/main.dir/tarefa.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/tarefa.cpp || cmake_object_order_depends_target_main
-  DEP_FILE = CMakeFiles\main.dir\tarefa.cpp.obj.d
+build CMakeFiles/main.dir/src/tarefa.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/src/tarefa.cpp || cmake_object_order_depends_target_main
+  DEP_FILE = CMakeFiles\main.dir\src\tarefa.cpp.obj.d
   FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/header
+  INCLUDES = -IC:/utfpr/projetoSO/src/header
   OBJECT_DIR = CMakeFiles\main.dir
-  OBJECT_FILE_DIR = CMakeFiles\main.dir
+  OBJECT_FILE_DIR = CMakeFiles\main.dir\src
   TARGET_SUPPORT_DIR = CMakeFiles\main.dir
 
-build CMakeFiles/main.dir/escalonadorRm.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/escalonadorRm.cpp || cmake_object_order_depends_target_main
-  DEP_FILE = CMakeFiles\main.dir\escalonadorRm.cpp.obj.d
+build CMakeFiles/main.dir/src/escalonadorRm.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/src/escalonadorRm.cpp || cmake_object_order_depends_target_main
+  DEP_FILE = CMakeFiles\main.dir\src\escalonadorRm.cpp.obj.d
   FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/header
+  INCLUDES = -IC:/utfpr/projetoSO/src/header
   OBJECT_DIR = CMakeFiles\main.dir
-  OBJECT_FILE_DIR = CMakeFiles\main.dir
+  OBJECT_FILE_DIR = CMakeFiles\main.dir\src
   TARGET_SUPPORT_DIR = CMakeFiles\main.dir
 
-build CMakeFiles/main.dir/escalonadorEdf.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/escalonadorEdf.cpp || cmake_object_order_depends_target_main
-  DEP_FILE = CMakeFiles\main.dir\escalonadorEdf.cpp.obj.d
+build CMakeFiles/main.dir/src/escalonadorEdf.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/src/escalonadorEdf.cpp || cmake_object_order_depends_target_main
+  DEP_FILE = CMakeFiles\main.dir\src\escalonadorEdf.cpp.obj.d
   FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/header
+  INCLUDES = -IC:/utfpr/projetoSO/src/header
   OBJECT_DIR = CMakeFiles\main.dir
-  OBJECT_FILE_DIR = CMakeFiles\main.dir
+  OBJECT_FILE_DIR = CMakeFiles\main.dir\src
   TARGET_SUPPORT_DIR = CMakeFiles\main.dir
 
-build CMakeFiles/main.dir/simulador.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/simulador.cpp || cmake_object_order_depends_target_main
-  DEP_FILE = CMakeFiles\main.dir\simulador.cpp.obj.d
+build CMakeFiles/main.dir/src/simulador.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/src/simulador.cpp || cmake_object_order_depends_target_main
+  DEP_FILE = CMakeFiles\main.dir\src\simulador.cpp.obj.d
   FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/header
+  INCLUDES = -IC:/utfpr/projetoSO/src/header
   OBJECT_DIR = CMakeFiles\main.dir
-  OBJECT_FILE_DIR = CMakeFiles\main.dir
+  OBJECT_FILE_DIR = CMakeFiles\main.dir\src
+  TARGET_SUPPORT_DIR = CMakeFiles\main.dir
+
+build CMakeFiles/main.dir/src/leitorConfig.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/src/leitorConfig.cpp || cmake_object_order_depends_target_main
+  DEP_FILE = CMakeFiles\main.dir\src\leitorConfig.cpp.obj.d
+  FLAGS = -std=gnu++17
+  INCLUDES = -IC:/utfpr/projetoSO/src/header
+  OBJECT_DIR = CMakeFiles\main.dir
+  OBJECT_FILE_DIR = CMakeFiles\main.dir\src
   TARGET_SUPPORT_DIR = CMakeFiles\main.dir
 
 
@@ -108,7 +116,7 @@ build CMakeFiles/main.dir/simulador.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/u
 #############################################
 # Link the executable main.exe
 
-build main.exe: CXX_EXECUTABLE_LINKER__main_ CMakeFiles/main.dir/main.cpp.obj CMakeFiles/main.dir/cpu.cpp.obj CMakeFiles/main.dir/relogio.cpp.obj CMakeFiles/main.dir/tarefa.cpp.obj CMakeFiles/main.dir/escalonadorRm.cpp.obj CMakeFiles/main.dir/escalonadorEdf.cpp.obj CMakeFiles/main.dir/simulador.cpp.obj
+build main.exe: CXX_EXECUTABLE_LINKER__main_ CMakeFiles/main.dir/src/main.cpp.obj CMakeFiles/main.dir/src/cpu.cpp.obj CMakeFiles/main.dir/src/relogio.cpp.obj CMakeFiles/main.dir/src/tarefa.cpp.obj CMakeFiles/main.dir/src/escalonadorRm.cpp.obj CMakeFiles/main.dir/src/escalonadorEdf.cpp.obj CMakeFiles/main.dir/src/simulador.cpp.obj CMakeFiles/main.dir/src/leitorConfig.cpp.obj
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\main.dir
   POST_BUILD = cd .
@@ -127,18 +135,18 @@ build main.exe: CXX_EXECUTABLE_LINKER__main_ CMakeFiles/main.dir/main.cpp.obj CM
 
 build cmake_object_order_depends_target_testeGrafico: phony || .
 
-build CMakeFiles/testeGrafico.dir/testeGrafico.cpp.obj: CXX_COMPILER__testeGrafico_unscanned_ C$:/utfpr/projetoSO/testeGrafico.cpp || cmake_object_order_depends_target_testeGrafico
-  DEP_FILE = CMakeFiles\testeGrafico.dir\testeGrafico.cpp.obj.d
+build CMakeFiles/testeGrafico.dir/src/testeGrafico.cpp.obj: CXX_COMPILER__testeGrafico_unscanned_ C$:/utfpr/projetoSO/src/testeGrafico.cpp || cmake_object_order_depends_target_testeGrafico
+  DEP_FILE = CMakeFiles\testeGrafico.dir\src\testeGrafico.cpp.obj.d
   FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/header -IC:/utfpr/projetoSO/external/imgui -IC:/utfpr/projetoSO/external/rlImGui
+  INCLUDES = -IC:/utfpr/projetoSO/src/header -IC:/utfpr/projetoSO/external/imgui -IC:/utfpr/projetoSO/external/rlImGui
   OBJECT_DIR = CMakeFiles\testeGrafico.dir
-  OBJECT_FILE_DIR = CMakeFiles\testeGrafico.dir
+  OBJECT_FILE_DIR = CMakeFiles\testeGrafico.dir\src
   TARGET_SUPPORT_DIR = CMakeFiles\testeGrafico.dir
 
 build CMakeFiles/testeGrafico.dir/external/imgui/imgui.cpp.obj: CXX_COMPILER__testeGrafico_unscanned_ C$:/utfpr/projetoSO/external/imgui/imgui.cpp || cmake_object_order_depends_target_testeGrafico
   DEP_FILE = CMakeFiles\testeGrafico.dir\external\imgui\imgui.cpp.obj.d
   FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/header -IC:/utfpr/projetoSO/external/imgui -IC:/utfpr/projetoSO/external/rlImGui
+  INCLUDES = -IC:/utfpr/projetoSO/src/header -IC:/utfpr/projetoSO/external/imgui -IC:/utfpr/projetoSO/external/rlImGui
   OBJECT_DIR = CMakeFiles\testeGrafico.dir
   OBJECT_FILE_DIR = CMakeFiles\testeGrafico.dir\external\imgui
   TARGET_SUPPORT_DIR = CMakeFiles\testeGrafico.dir
@@ -146,7 +154,7 @@ build CMakeFiles/testeGrafico.dir/external/imgui/imgui.cpp.obj: CXX_COMPILER__te
 build CMakeFiles/testeGrafico.dir/external/imgui/imgui_draw.cpp.obj: CXX_COMPILER__testeGrafico_unscanned_ C$:/utfpr/projetoSO/external/imgui/imgui_draw.cpp || cmake_object_order_depends_target_testeGrafico
   DEP_FILE = CMakeFiles\testeGrafico.dir\external\imgui\imgui_draw.cpp.obj.d
   FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/header -IC:/utfpr/projetoSO/external/imgui -IC:/utfpr/projetoSO/external/rlImGui
+  INCLUDES = -IC:/utfpr/projetoSO/src/header -IC:/utfpr/projetoSO/external/imgui -IC:/utfpr/projetoSO/external/rlImGui
   OBJECT_DIR = CMakeFiles\testeGrafico.dir
   OBJECT_FILE_DIR = CMakeFiles\testeGrafico.dir\external\imgui
   TARGET_SUPPORT_DIR = CMakeFiles\testeGrafico.dir
@@ -154,7 +162,7 @@ build CMakeFiles/testeGrafico.dir/external/imgui/imgui_draw.cpp.obj: CXX_COMPILE
 build CMakeFiles/testeGrafico.dir/external/imgui/imgui_tables.cpp.obj: CXX_COMPILER__testeGrafico_unscanned_ C$:/utfpr/projetoSO/external/imgui/imgui_tables.cpp || cmake_object_order_depends_target_testeGrafico
   DEP_FILE = CMakeFiles\testeGrafico.dir\external\imgui\imgui_tables.cpp.obj.d
   FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/header -IC:/utfpr/projetoSO/external/imgui -IC:/utfpr/projetoSO/external/rlImGui
+  INCLUDES = -IC:/utfpr/projetoSO/src/header -IC:/utfpr/projetoSO/external/imgui -IC:/utfpr/projetoSO/external/rlImGui
   OBJECT_DIR = CMakeFiles\testeGrafico.dir
   OBJECT_FILE_DIR = CMakeFiles\testeGrafico.dir\external\imgui
   TARGET_SUPPORT_DIR = CMakeFiles\testeGrafico.dir
@@ -162,7 +170,7 @@ build CMakeFiles/testeGrafico.dir/external/imgui/imgui_tables.cpp.obj: CXX_COMPI
 build CMakeFiles/testeGrafico.dir/external/imgui/imgui_widgets.cpp.obj: CXX_COMPILER__testeGrafico_unscanned_ C$:/utfpr/projetoSO/external/imgui/imgui_widgets.cpp || cmake_object_order_depends_target_testeGrafico
   DEP_FILE = CMakeFiles\testeGrafico.dir\external\imgui\imgui_widgets.cpp.obj.d
   FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/header -IC:/utfpr/projetoSO/external/imgui -IC:/utfpr/projetoSO/external/rlImGui
+  INCLUDES = -IC:/utfpr/projetoSO/src/header -IC:/utfpr/projetoSO/external/imgui -IC:/utfpr/projetoSO/external/rlImGui
   OBJECT_DIR = CMakeFiles\testeGrafico.dir
   OBJECT_FILE_DIR = CMakeFiles\testeGrafico.dir\external\imgui
   TARGET_SUPPORT_DIR = CMakeFiles\testeGrafico.dir
@@ -170,7 +178,7 @@ build CMakeFiles/testeGrafico.dir/external/imgui/imgui_widgets.cpp.obj: CXX_COMP
 build CMakeFiles/testeGrafico.dir/external/rlImGui/rlImGui.cpp.obj: CXX_COMPILER__testeGrafico_unscanned_ C$:/utfpr/projetoSO/external/rlImGui/rlImGui.cpp || cmake_object_order_depends_target_testeGrafico
   DEP_FILE = CMakeFiles\testeGrafico.dir\external\rlImGui\rlImGui.cpp.obj.d
   FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/header -IC:/utfpr/projetoSO/external/imgui -IC:/utfpr/projetoSO/external/rlImGui
+  INCLUDES = -IC:/utfpr/projetoSO/src/header -IC:/utfpr/projetoSO/external/imgui -IC:/utfpr/projetoSO/external/rlImGui
   OBJECT_DIR = CMakeFiles\testeGrafico.dir
   OBJECT_FILE_DIR = CMakeFiles\testeGrafico.dir\external\rlImGui
   TARGET_SUPPORT_DIR = CMakeFiles\testeGrafico.dir
@@ -183,7 +191,7 @@ build CMakeFiles/testeGrafico.dir/external/rlImGui/rlImGui.cpp.obj: CXX_COMPILER
 #############################################
 # Link the executable testeGrafico.exe
 
-build testeGrafico.exe: CXX_EXECUTABLE_LINKER__testeGrafico_ CMakeFiles/testeGrafico.dir/testeGrafico.cpp.obj CMakeFiles/testeGrafico.dir/external/imgui/imgui.cpp.obj CMakeFiles/testeGrafico.dir/external/imgui/imgui_draw.cpp.obj CMakeFiles/testeGrafico.dir/external/imgui/imgui_tables.cpp.obj CMakeFiles/testeGrafico.dir/external/imgui/imgui_widgets.cpp.obj CMakeFiles/testeGrafico.dir/external/rlImGui/rlImGui.cpp.obj
+build testeGrafico.exe: CXX_EXECUTABLE_LINKER__testeGrafico_ CMakeFiles/testeGrafico.dir/src/testeGrafico.cpp.obj CMakeFiles/testeGrafico.dir/external/imgui/imgui.cpp.obj CMakeFiles/testeGrafico.dir/external/imgui/imgui_draw.cpp.obj CMakeFiles/testeGrafico.dir/external/imgui/imgui_tables.cpp.obj CMakeFiles/testeGrafico.dir/external/imgui/imgui_widgets.cpp.obj CMakeFiles/testeGrafico.dir/external/rlImGui/rlImGui.cpp.obj
   LINK_LIBRARIES = -lraylib  -lopengl32  -lgdi32  -lwinmm  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\testeGrafico.dir
   POST_BUILD = cd .
