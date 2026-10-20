@@ -22,6 +22,7 @@ set(CORE_SOURCES
     escalonadorRm.cpp
     escalonadorEdf.cpp
     simulador.cpp
+    leitorConfig.cpp
 )
 
 # =========================

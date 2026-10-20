@@ -13,9 +13,9 @@ void CPU::liberar()
     {
         tarefaAtual->setIdCPU(-1);
     }
-    if (tarefaAtual != nullptr && tarefaAtual->getEstado() != EstadoTarefa::TERMINADA)
+    if (tarefaAtual != nullptr && tarefaAtual->getEstado() == EstadoTarefa::EXECUTANDO)
     {
-        tarefaAtual->setEstado(EstadoTarefa::PRONTA); //se a tarefa for retirada da cpu, mas, nao necessariamente foi terminada, ela volta para o estado de pronta
+        tarefaAtual->setEstado(EstadoTarefa::PRONTA); //se a tarefa for retirada da cpu, mas nao necessariamente terminou a execucao, ela volta para o estado de pronta
     }
 
     tarefaAtual = nullptr;
@@ -76,7 +76,7 @@ void CPU::executarTick(){
     tarefaAtual->executarTick(); // decrementa o tempo restante da tarefa
     if (tarefaAtual->getTempoRestante() == 0)
     {
-        tarefaAtual->setEstado(EstadoTarefa::TERMINADA);
+        //tarefaAtual->setEstado(EstadoTarefa::TERMINADA); //tarefa ja vai setar o estado para TERMINADA quando terminar de executar, entao n precisa setar aqui
         liberar();
     }
 }
