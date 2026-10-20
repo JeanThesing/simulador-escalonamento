@@ -19,8 +19,6 @@ set(CORE_SOURCES
     src/cpu.cpp
     src/relogio.cpp
     src/tarefa.cpp
-    src/escalonadorRm.cpp
-    src/escalonadorEdf.cpp
     src/simulador.cpp
     src/leitorConfig.cpp
     src/escalonador.cpp

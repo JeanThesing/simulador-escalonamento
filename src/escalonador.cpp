@@ -9,11 +9,10 @@ Tarefa *Escalonador::selecionar(const std::vector<Tarefa *> &prontas)
         if (escolhida == nullptr)
             escolhida = t; // primeira tarefa da lista
         else if (prioridade(t) > prioridade(escolhida))
-            escolhida = t; // t tem prioridade maior
+            escolhida = t; // t tem prioridade maior que a já escolhida
         else if (prioridade(t) == prioridade(escolhida))
             escolhida = desempatar(escolhida, t); // empate: aplica o 4.3
     }
-
     return escolhida; // nullptr se nao havia tarefas prontas
 }
 
