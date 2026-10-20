@@ -23,6 +23,7 @@ set(CORE_SOURCES
     src/escalonadorEdf.cpp
     src/simulador.cpp
     src/leitorConfig.cpp
+    src/escalonador.cpp
 )
 
 # =========================

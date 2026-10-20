@@ -23,21 +23,18 @@ private:
     armazenadas durante a simulação em uma única estrutura de dados, p.ex., Task
     Control Block (TCB);*/
     int ingresso;      // indica o instante de tempo que a tarefa foi criada;
-    int duracao;       // indica o tempo de execução da tarefa;
+    int duracao;       // indica o tempo de execução da tarefa (tempo de computacao);
     int tempoRestante; // tempo restante da execucao da tarefa. Base é = duracao.
-    int periodo;       /*indica o período no qual uma tarefa é ativada: valores maiores que
-     zero indicam que a tarefa tem ativação periódica a cada “n” ticks de relógio; valor
-     zero indica que a tarefa é aperiódica, ou seja, é ativada apenas uma vez no momento
-     da sua criação; valores menores que zero representam erros no arquivo.*/
-    int prazo;         /*indica o tempo máximo que uma ocorrência/execução da tarefa deve
+    int periodo;       /*intervalo de tempo entre as ativações da tarefa*/
+    int prazo;         /*SEMPRE MENOR QUE O periodo, e maior que o tempo de computacao*/
+    /*indica o tempo máximo que uma ocorrência/execução da tarefa deve
      terminar a sua execução (deadline). O prazo começa a contar a partir do momento
      que a tarefa for ativada. Caso o tempo de execução da ocorrência/execução da tarefa
      ultrapasse o prazo (deadline), isso indica um erro e deve ser mostrado no gráfico de
      gantt. A tarefa que perdeu o prazo continua sendo executada e só termina quando o
      tempo de execução da tarefa for igual ou maior que a duração da tarefa.*/
     /*lista_eventos indica uma lista de eventos que ocorre durante a execução
-da tarefa.
-*/
+    da tarefa.*/
     int prazoAbsoluto = -1; // prazo absoluto da tarefa, calculado a partir do tick de ingresso + prazo relativo
     int execucoes = 0;      // a tarefa finaliza quando executa 10 vezes (por ser periodica)
     int ativacoes = 0;      // quantidade de vezes que a tarefa foi ativada (para ser usada no gantt)
@@ -60,7 +57,7 @@ public:
     void ativar(int tick); // ativa a tarefa, setando o estado para PRONTA e calculando o prazo absoluto
     void verificarPrazo(int tick);
 
-    //Getters de configuração (imutável)
+    // Getters de configuração (imutável)
     int getId() const;
     const std::string &getCor() const;
     int getIngresso() const;
@@ -68,8 +65,8 @@ public:
     int getPeriodo() const;
     int getPrazo() const;
 
-    //Getters de estado de execução
-    // estado
+    // Getters de estado de execução
+    //  estado
     EstadoTarefa getEstado() const;
     // idcpu
     int getIdCPU() const;
@@ -88,3 +85,19 @@ public:
     // tempo restante
     void setTempoRestante(int tempoRestante);
 };
+
+
+/*
+Tempo de chegada (Arrival Time ai): instante em que o escalonador toma conhecimento de uma nova ativação da tarefa.
+
+Tempo de liberação (Release Time ri): instante em que essa ativação é inserida na fila de Prontos, ficando disponível para ser escolhida pelo escalonador.
+
+
+Release Jitter (Ji), que representa a variação máxima dos tempos de liberação
+*/
+
+/*
+Chegada: o sistema sabe que a tarefa precisa executar
+Liberação: a tarefa está pronta e pode disputar a CPU
+Início: a tarefa efetivamente recebe a CPU
+*/

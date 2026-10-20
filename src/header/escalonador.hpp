@@ -11,9 +11,19 @@ class Escalonador
 public:
     virtual ~Escalonador() = default;
 
+    /*o escalonador é apenas uma função que retorna qual é a
+    próxima tarefa a ser executada*/
     virtual Tarefa *selecionar(
-        const std::vector<Tarefa *> &prontas) = 0; //seleciona proxima tarefa a ser executada, de acordo com a politica de escalonamento
-};
+        const std::vector<Tarefa *> &prontas) = 0; // seleciona proxima tarefa a ser executada, de acordo com a politica de escalonamento
 
-// Correção lógica (correctness) Produzir o resultado correto
-// Correção temporal (timeliness) Produzir esse resultado dentro do prazo
+protected:
+    // mecanismos de prioridade:
+
+    /*Cada algoritmo implementa sua propria funcao de prioridade, retornando um valor maior para tarefas com maior prioridade*/
+    virtual int prioridade(const Tarefa *t) const = 0;
+    
+    // mecanismos de desempate:
+
+    //  escolhe entre duas tarefas com mesma prioridade
+    Tarefa* desempatar(Tarefa *a, Tarefa *b);
+};
