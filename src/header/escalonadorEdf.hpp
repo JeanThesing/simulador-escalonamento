@@ -4,7 +4,7 @@
 
 // Prioridade determinada pelo menor prazoAbsoluto
 // Earliest Deadline First (EDF)
-// preemptivo e estatico
+// preemptivo e dinamico
 
 
 class EscalonadorEDF : public Escalonador

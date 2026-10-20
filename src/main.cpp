@@ -1,17 +1,22 @@
 #include "header/simulador.hpp"
 #include "header/leitorConfig.hpp"
+#include <time.h>
 using namespace std;
 
-/*int main()
-{
+
+int main()
+{   
+    //srand(time(nullptr));
+    srand(67); // gera msm sequencia de num aleaotiros
     Simulador simulador(15, 5, "RM");
     simulador.criaCPUS();
     simulador.criaTarefas();
+    testeLeitor();
     return 0;
-}*/
+}
 
-//teste leitor
-int main()
+/*teste leitor*/
+void testeLeitor()
 {
     Configuracao config;
     // tenta carregar o arquivo
@@ -24,8 +29,7 @@ int main()
         cout << "AVISO: " << aviso << endl;
     // Encerra se houver erros
     if (!carregou)
-        return 1;
-
+        return;
     // mostra config lidas
     cout << "Algoritmo: " << config.algoritmo << endl;
     cout << "Quantum: " << config.quantum << endl;
@@ -42,5 +46,4 @@ int main()
         cout << "Periodo: " << tarefa.getPeriodo() << endl;
         cout << "Prazo: " << tarefa.getPrazo() << endl;
     }
-    return 0;
 }
