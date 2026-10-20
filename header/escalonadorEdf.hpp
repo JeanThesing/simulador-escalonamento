@@ -2,9 +2,11 @@
 #include <iostream>
 #include "escalonador.hpp"
 
-class EscalonadorEDF: public Escalonador{
-    private:
-        int quantum; // passado como parâmetro da simulacao
-    public:
-        EscalonadorEDF();
+class EscalonadorEDF : public Escalonador
+{
+public:
+    void escalonar(
+        std::vector<Tarefa> &tarefas,
+        std::vector<CPU> &cpus,
+        std::queue<int> &filaDeProntas) override;
 };

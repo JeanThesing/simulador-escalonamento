@@ -13,13 +13,10 @@ Simulador::~Simulador() {}
 void Simulador::criaEscalonador()
 {
     if (algoritmo_escalonamento == "RM")
-    {
-        escalonador = EscalonadorRM();
-    }
-    if (algoritmo_escalonamento == "EDF")
-    {
-        escalonador = EscalonadorEDF();
-    }
+        escalonador = std::make_unique<EscalonadorRM>();
+
+    else if (algoritmo_escalonamento == "EDF")
+        escalonador = std::make_unique<EscalonadorEDF>();
 }
 
 void Simulador::criaCPUS()

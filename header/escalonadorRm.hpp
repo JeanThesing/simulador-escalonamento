@@ -3,8 +3,10 @@
 #include "escalonador.hpp"
 
 class EscalonadorRM: public Escalonador{
-    private:
-        int quantum; // passado como parâmetro da simulacao
-    public:
-        EscalonadorRM();
+public:
+    void escalonar(
+        std::vector<Tarefa>& tarefas,
+        std::vector<CPU>& cpus,
+        std::queue<int>& filaDeProntas
+    ) override;
 };

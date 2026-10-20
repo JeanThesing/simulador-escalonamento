@@ -9,6 +9,7 @@
 #include <queue>
 #include <vector>
 #include <string>
+#include <memory>
 
 struct EstadoSistema
 { // historico do sistema que vai ser adicionado a cada tick, para permitir retroceder o tempo da simulacao
@@ -26,7 +27,7 @@ private:
     std::vector<EstadoSistema> historico = std::vector<EstadoSistema>(); //historico do sistema
     int qtde_cpus = 1;
     int quantum;
-    Escalonador escalonador;
+    std::unique_ptr<Escalonador> escalonador;
     std::string algoritmo_escalonamento = nullptr;
     // algoritmo de escalonamento a ser usado
     Relogio relogio = Relogio();
