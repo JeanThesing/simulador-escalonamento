@@ -3,26 +3,31 @@
 #include <time.h>
 using namespace std;
 
-void testeLeitor();
+void testeLeitor(const string &caminho);
 
-int main()
-{   
-    //srand(time(nullptr));
+int main(int argc, char *argv[])
+{
+    string caminho;
+    if (argc > 1)
+        caminho = argv[1]; // 1º argumento da linha de comando
+    else
+    {
+        cout << "Arquivo de configuracao: ";
+        getline(cin, caminho); // sem argumento: pergunta ao usuario
+    }   
+    // srand(time(nullptr));
     srand(67); // gera msm sequencia de num aleaotiros
     cout << "Simulador de escalonamento de tarefas periodicas" << endl;
-    Simulador simulador(15, 5, "RM");
-    simulador.criaCPUS();
-    simulador.criaTarefas();
-    testeLeitor();
+    //Simulador simulador(15, 5, "RM");
+    testeLeitor(caminho);
     return 0;
 }
 
 /*teste leitor*/
-void testeLeitor()
+void testeLeitor(const string &caminho)
 {
     Configuracao config;
-    // tenta carregar o arquivo
-    bool carregou = carregarConfiguracao("tests/config.txt", config);
+    bool carregou = carregarConfiguracao(caminho, config);
     // mostra os erros encontrados
     for (string erro : config.erros)
         cout << "ERRO: " << erro << endl;

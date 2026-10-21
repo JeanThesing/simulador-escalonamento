@@ -1,7 +1,12 @@
 # para rodar o build do cmake
 # cmake -S . -B build -G Ninja
 # cmake --build build
+# testes de build (muda o diretorio)
 # ./build/main.exe
+# .\build\main.exe "tests\config.txt"
+# .\build\main.exe "C:\teste-config\config.txt"  
+#cmake --build build
+
 # ./build/testeGrafico.exe
 
 cmake_minimum_required(VERSION 3.20)

@@ -54,9 +54,9 @@ int Escalonador::desempatar(const Tarefa *a, const Tarefa *b) const
     if (bExecutando && !aExecutando) return -1;
 
     // 2- menor prazo
-    if (a->getPrazo() < b->getPrazoAbsoluto()) return 1;
-    if (b->getPrazo() < a->getPrazoAbsoluto()) return -1;
-
+    if (a->getPrazo() < b->getPrazo()) return 1;
+    if (b->getPrazo() < a->getPrazo()) return -1;
+    
     // 3- quem ingressou antes
     if (a->getIngresso() < b->getIngresso()) return 1;
     if (b->getIngresso() < a->getIngresso()) return -1;
