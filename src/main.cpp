@@ -3,11 +3,13 @@
 #include <time.h>
 using namespace std;
 
+void testeLeitor();
 
 int main()
 {   
     //srand(time(nullptr));
     srand(67); // gera msm sequencia de num aleaotiros
+    cout << "Simulador de escalonamento de tarefas periodicas" << endl;
     Simulador simulador(15, 5, "RM");
     simulador.criaCPUS();
     simulador.criaTarefas();

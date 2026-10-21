@@ -17,3 +17,10 @@ struct Configuracao
 
 // Le o arquivo em 'caminho' (qualquer nome/local). Retorna true se nao houve erros.
 bool carregarConfiguracao(const std::string &caminho, Configuracao &config);
+
+/*
+3.2. O software deve sugerir valores padrão para todo os parâmetros de configuração da
+simulação ou do software em si. Esses valores padrão devem ser sobrescritos por
+valores indicados pelo usuário, tanto na hora de carregar o arquivo de configuração
+como também nas telas que permite a modificação dos parâmetros da simulação.
+*/

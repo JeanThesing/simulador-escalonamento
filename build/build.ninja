@@ -76,22 +76,6 @@ build CMakeFiles/main.dir/src/tarefa.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/
   OBJECT_FILE_DIR = CMakeFiles\main.dir\src
   TARGET_SUPPORT_DIR = CMakeFiles\main.dir
 
-build CMakeFiles/main.dir/src/escalonadorRm.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/src/escalonadorRm.cpp || cmake_object_order_depends_target_main
-  DEP_FILE = CMakeFiles\main.dir\src\escalonadorRm.cpp.obj.d
-  FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/src/header
-  OBJECT_DIR = CMakeFiles\main.dir
-  OBJECT_FILE_DIR = CMakeFiles\main.dir\src
-  TARGET_SUPPORT_DIR = CMakeFiles\main.dir
-
-build CMakeFiles/main.dir/src/escalonadorEdf.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/src/escalonadorEdf.cpp || cmake_object_order_depends_target_main
-  DEP_FILE = CMakeFiles\main.dir\src\escalonadorEdf.cpp.obj.d
-  FLAGS = -std=gnu++17
-  INCLUDES = -IC:/utfpr/projetoSO/src/header
-  OBJECT_DIR = CMakeFiles\main.dir
-  OBJECT_FILE_DIR = CMakeFiles\main.dir\src
-  TARGET_SUPPORT_DIR = CMakeFiles\main.dir
-
 build CMakeFiles/main.dir/src/simulador.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/src/simulador.cpp || cmake_object_order_depends_target_main
   DEP_FILE = CMakeFiles\main.dir\src\simulador.cpp.obj.d
   FLAGS = -std=gnu++17
@@ -108,6 +92,14 @@ build CMakeFiles/main.dir/src/leitorConfig.cpp.obj: CXX_COMPILER__main_unscanned
   OBJECT_FILE_DIR = CMakeFiles\main.dir\src
   TARGET_SUPPORT_DIR = CMakeFiles\main.dir
 
+build CMakeFiles/main.dir/src/escalonador.cpp.obj: CXX_COMPILER__main_unscanned_ C$:/utfpr/projetoSO/src/escalonador.cpp || cmake_object_order_depends_target_main
+  DEP_FILE = CMakeFiles\main.dir\src\escalonador.cpp.obj.d
+  FLAGS = -std=gnu++17
+  INCLUDES = -IC:/utfpr/projetoSO/src/header
+  OBJECT_DIR = CMakeFiles\main.dir
+  OBJECT_FILE_DIR = CMakeFiles\main.dir\src
+  TARGET_SUPPORT_DIR = CMakeFiles\main.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target main
@@ -116,7 +108,7 @@ build CMakeFiles/main.dir/src/leitorConfig.cpp.obj: CXX_COMPILER__main_unscanned
 #############################################
 # Link the executable main.exe
 
-build main.exe: CXX_EXECUTABLE_LINKER__main_ CMakeFiles/main.dir/src/main.cpp.obj CMakeFiles/main.dir/src/cpu.cpp.obj CMakeFiles/main.dir/src/relogio.cpp.obj CMakeFiles/main.dir/src/tarefa.cpp.obj CMakeFiles/main.dir/src/escalonadorRm.cpp.obj CMakeFiles/main.dir/src/escalonadorEdf.cpp.obj CMakeFiles/main.dir/src/simulador.cpp.obj CMakeFiles/main.dir/src/leitorConfig.cpp.obj
+build main.exe: CXX_EXECUTABLE_LINKER__main_ CMakeFiles/main.dir/src/main.cpp.obj CMakeFiles/main.dir/src/cpu.cpp.obj CMakeFiles/main.dir/src/relogio.cpp.obj CMakeFiles/main.dir/src/tarefa.cpp.obj CMakeFiles/main.dir/src/simulador.cpp.obj CMakeFiles/main.dir/src/leitorConfig.cpp.obj CMakeFiles/main.dir/src/escalonador.cpp.obj
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\main.dir
   POST_BUILD = cd .
