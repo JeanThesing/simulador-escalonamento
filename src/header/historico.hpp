@@ -36,3 +36,7 @@ struct EstadoSistema //salva o estado do sistema em determinado tick, para permi
 
     int quantum = 0;
 };
+
+void salvar(const EstadoSistema& snapshot);
+const EstadoSistema* buscar(int tick);
+void limpar();

@@ -32,6 +32,7 @@ private:
     std::vector<int> filaDeProntas = std::vector<int>(); // fila com o ids das tarefas prontas (vector para poder ordenar as tarefas de acordo com o algoritmo de escalonamento)
     std::vector<std::vector<int>> historicoGantt;
     void salvarTickGantt();
+    std::vector<Tarefa> tarefasIniciais; // tarefas lidas do arquivo de configuracao
     
 public:
     Simulador(int qtde_cpus, int quantum, std::string algoritmo_escalonamento);
@@ -40,6 +41,7 @@ public:
     void criaCPUS();
     void criaEscalonador();
     void criaTarefas();
+    void definirTarefas(const std::vector<Tarefa> &t) { tarefasIniciais = t; }
 
     void avancaTick();
     void retrocedeTick(); // funcionara com base no historico do sistema (a ser implementado)

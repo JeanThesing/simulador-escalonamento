@@ -29,9 +29,13 @@ void Simulador::criaCPUS()
 void Simulador::criaTarefas()
 {
     // Cria as tarefas iniciais com seus respectivos parâmetros.
-    tarefas.emplace_back(1, "FF0000", 0, 3, 5, 5);
-    tarefas.emplace_back(2, "00FF00", 0, 4, 10, 10);
-    tarefas.emplace_back(3, "0000FF", 2, 2, 7, 7);
+    // tarefas.emplace_back(1, "FF0000", 0, 3, 5, 5);
+    // tarefas.emplace_back(2, "00FF00", 0, 4, 10, 10);
+    // tarefas.emplace_back(3, "0000FF", 2, 2, 7, 7);
+
+    // As tarefas vêm sempre do arquivo de configuração (guardadas em tarefasIniciais)
+    // Copiar (em vez de emplace_back) também garante o estado inicial no reiniciar().
+    tarefas = tarefasIniciais;
 }
 
 void Simulador::atualizaFilaDeProntas()
@@ -39,22 +43,30 @@ void Simulador::atualizaFilaDeProntas()
     filaDeProntas.clear();
 
     // Mantém na fila apenas os IDs das tarefas que estão prontas para execução.
-    for (const Tarefa& tarefa : tarefas)
+    for (const Tarefa &tarefa : tarefas)
         if (tarefa.getEstado() == EstadoTarefa::PRONTA)
             filaDeProntas.push_back(tarefa.getId());
 }
 
 void Simulador::avancaTick()
 {
-    relogio.incrementa();
     int tickAtual = relogio.getTick();
 
-    // Verifica se alguma tarefa deve ser ativada neste instante da simulação.
-    for (Tarefa& tarefa : tarefas)
+    // Ativa as tarefas que chegam neste instante.
+    for (Tarefa &tarefa : tarefas)
+    {
         if (tarefa.deveExecutar(tickAtual))
             tarefa.ativar(tickAtual);
+    }
 
+    // Executa as tarefas durante um tick.
     executarSimulacao();
+
+    // Avança o relógio.
+    relogio.incrementa();
+
+    // Salva o estado após a execução e o avanço do relógio.
+    salvaHistoricoTick();
 }
 
 void Simulador::retrocedeTick()
@@ -69,17 +81,17 @@ void Simulador::retrocedeTick()
         historicoGantt.pop_back();
 
     // Recupera o estado anterior e restaura o relógio e as tarefas.
-    const EstadoSistema& estado = historico.back();
+    const EstadoSistema &estado = historico.back();
     tarefas = estado.tarefas;
     cpus.clear();
     relogio.setTick(estado.tick);
 
     // Reconstrói as CPUs a partir dos dados salvos, pois os ponteiros
     // das tarefas precisam apontar para os objetos atuais do vetor tarefas.
-    for (const EstadoCPU& salva : estado.cpus)
+    for (const EstadoCPU &salva : estado.cpus)
     {
         cpus.emplace_back(salva.id);
-        CPU& cpu = cpus.back();
+        CPU &cpu = cpus.back();
 
         if (!salva.ligado)
             cpu.desligar();
@@ -90,7 +102,7 @@ void Simulador::retrocedeTick()
         // Localiza e reassocia à CPU a tarefa registrada no histórico.
         if (salva.idTarefaAtual != -1)
         {
-            for (Tarefa& tarefa : tarefas)
+            for (Tarefa &tarefa : tarefas)
             {
                 if (tarefa.getId() == salva.idTarefaAtual)
                 {
@@ -105,9 +117,9 @@ void Simulador::retrocedeTick()
 
     // A reconstrução das CPUs pode alterar estados das tarefas.
     // Por isso, restaura os estados e IDs de CPU exatamente como foram salvos.
-    for (const Tarefa& salva : estado.tarefas)
+    for (const Tarefa &salva : estado.tarefas)
     {
-        for (Tarefa& atual : tarefas)
+        for (Tarefa &atual : tarefas)
         {
             if (atual.getId() == salva.getId())
             {
@@ -136,17 +148,17 @@ void Simulador::executarSimulacao()
     }
 
     // Impede que a mesma tarefa seja atribuída a mais de uma CPU no tick.
-    vector<Tarefa*> tarefasAtribuidas;
+    vector<Tarefa *> tarefasAtribuidas;
 
-    for (CPU& cpu : cpus)
+    for (CPU &cpu : cpus)
     {
         if (!cpu.getLigado())
             cpu.ligar();
 
-        vector<Tarefa*> candidatas;
+        vector<Tarefa *> candidatas;
 
         // Monta a lista de tarefas que esta CPU pode executar.
-        for (Tarefa& tarefa : tarefas)
+        for (Tarefa &tarefa : tarefas)
         {
             bool nestaCPU = cpu.getTarefaAtual() == &tarefa;
             bool emOutraCPU =
@@ -154,8 +166,7 @@ void Simulador::executarSimulacao()
 
             // Verifica se outra CPU já recebeu esta tarefa durante o escalonamento.
             bool jaAtribuida =
-                find(tarefasAtribuidas.begin(), tarefasAtribuidas.end(), &tarefa)
-                != tarefasAtribuidas.end();
+                find(tarefasAtribuidas.begin(), tarefasAtribuidas.end(), &tarefa) != tarefasAtribuidas.end();
 
             // Tarefas em execução em outra CPU ou já atribuídas são descartadas.
             if (emOutraCPU || jaAtribuida)
@@ -169,7 +180,7 @@ void Simulador::executarSimulacao()
 
         // O algoritmo RM ou EDF escolhe a tarefa de maior prioridade.
         // A decisão também pode manter a tarefa atual ou deixar a CPU ociosa.
-        Tarefa* escolhida = escalonador->selecionar(candidatas);
+        Tarefa *escolhida = escalonador->selecionar(candidatas);
 
         // Se a escolha mudar, libera a tarefa anterior antes de atribuir a nova.
         if (escolhida != cpu.getTarefaAtual())
@@ -192,11 +203,11 @@ void Simulador::executarSimulacao()
     salvarTickGantt();
 
     // Avança a execução das tarefas atribuídas às CPUs.
-    for (CPU& cpu : cpus)
+    for (CPU &cpu : cpus)
         cpu.executarTick();
 
     // Salva o estado resultante para permitir o retrocesso da simulação.
-    salvaHistoricoTick();
+    //salvaHistoricoTick();
 }
 
 void Simulador::salvaHistoricoTick()
@@ -210,7 +221,7 @@ void Simulador::salvaHistoricoTick()
 
     // Salva os dados de cada CPU sem armazenar ponteiros para tarefas.
     // O ID da tarefa permite reconstruir a atribuição durante o retrocesso.
-    for (const CPU& cpu : cpus)
+    for (const CPU &cpu : cpus)
     {
         EstadoCPU salva;
         salva.id = cpu.getId();
@@ -233,17 +244,17 @@ int Simulador::getTickAtual() const
     return relogio.getTick();
 }
 
-const vector<vector<int>>& Simulador::getHistoricoGantt() const
+const vector<vector<int>> &Simulador::getHistoricoGantt() const
 {
     return historicoGantt;
 }
 
-const vector<CPU>& Simulador::getCPUs() const
+const vector<CPU> &Simulador::getCPUs() const
 {
     return cpus;
 }
 
-const vector<Tarefa>& Simulador::getTarefas() const
+const vector<Tarefa> &Simulador::getTarefas() const
 {
     return tarefas;
 }
@@ -254,7 +265,7 @@ void Simulador::salvarTickGantt()
 
     // Cada posição representa uma CPU: salva o ID da tarefa executada
     // ou -1 quando a CPU está ociosa.
-    for (const CPU& cpu : cpus)
+    for (const CPU &cpu : cpus)
         linha.push_back(cpu.getTarefaAtual()
                             ? cpu.getTarefaAtual()->getId()
                             : -1);
@@ -278,6 +289,12 @@ void Simulador::reiniciar()
     criaCPUS();
     criaTarefas();
     criaEscalonador();
+    // Ativa as tarefas que chegam no instante inicial.
+    for (Tarefa &tarefa : tarefas)
+    {
+        if (tarefa.deveExecutar(0))
+            tarefa.ativar(0);
+    }
     atualizaFilaDeProntas();
     salvaHistoricoTick();
 }

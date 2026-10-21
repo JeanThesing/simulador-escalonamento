@@ -1,16 +1,18 @@
+
 # para rodar o build do cmake
 # cmake -S . -B build -G Ninja
 # cmake --build build
+
 # testes de build (muda o diretorio)
-# ./build/main.exe
-# .\build\main.exe "tests\config.txt"
-# .\build\main.exe "C:\teste-config\config.txt"  
-#cmake --build build
+# .\build\simulador.exe
+# .\build\simulador.exe "tests\config.txt"
+# .\build\simulador.exe "C:\teste-config\config.txt"
+
+# recompilar
+# cmake --build build
 
 # excluir pasta build
-#Remove-Item -Recurse -Force build
-
-# ./build/simulador.exe
+# Remove-Item -Recurse -Force build
 
 cmake_minimum_required(VERSION 3.20)
 
@@ -40,29 +42,14 @@ set(CORE_SOURCES
 )
 
 # =========================
-# Simulador no terminal
-# =========================
-
-add_executable(main
-    src/main.cpp
-    ${CORE_SOURCES}
-)
-
-target_include_directories(main PRIVATE
-    src/header
-)
-
-# =========================
-# Interface gráfica
+# Simulador principal
 # =========================
 
 add_executable(simulador
+    src/main.cpp
+    ${CORE_SOURCES}
     src/interfaceGrafica.cpp
-    src/simulador.cpp
-    src/tarefa.cpp
-    src/cpu.cpp
-    src/relogio.cpp
-    src/escalonador.cpp
+    src/header/interfaceGrafica.hpp
     external/imgui/imgui.cpp
     external/imgui/imgui_draw.cpp
     external/imgui/imgui_tables.cpp
@@ -75,6 +62,10 @@ target_include_directories(simulador PRIVATE
     external/imgui
     external/rlImGui
 )
+
+# =========================
+# Interface gráfica
+# =========================
 
 target_link_libraries(simulador PRIVATE
     raylib
