@@ -14,4 +14,6 @@ void Relogio::decrementa()
     }
 }
 
-int Relogio::getTick() const{ return tick; }
+int Relogio::getTick() const { return tick; }
+
+void Relogio::setTick(int tick) { this->tick = tick; }

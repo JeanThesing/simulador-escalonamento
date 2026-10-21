@@ -30,7 +30,9 @@ private:
     std::vector<Tarefa> tarefas;                       // todas as tarefas
     std::vector<CPU> cpus;                             // todas as cpus
     std::vector<int> filaDeProntas = std::vector<int>(); // fila com o ids das tarefas prontas (vector para poder ordenar as tarefas de acordo com o algoritmo de escalonamento)
-
+    std::vector<std::vector<int>> historicoGantt;
+    void salvarTickGantt();
+    
 public:
     Simulador(int qtde_cpus, int quantum, std::string algoritmo_escalonamento);
     ~Simulador();
@@ -44,6 +46,20 @@ public:
     void atualizaFilaDeProntas(); // atualiza a fila de tarefas prontas de acordo com o algoritmo de escalonamento
     void executarSimulacao();
     void salvaHistoricoTick();
+    
+    int getTickAtual() const;
+    const std::vector<std::vector<int>>& getHistoricoGantt() const; 
+    // O histórico terá esta estrutura: historicoGantt[tick][idCPU] = id da tarefa executada
+    // por exemplo:
+    // {
+    //     {-1, -1}, // Tick 0: ambas ociosas
+    //     {  1, -1}, // Tick 1: CPU 0 executou tarefa 1
+    //     {  1,  2}  // Tick 2: CPU 0 executou tarefa 1; CPU 1 executou tarefa 2
+    // }
+
+    const std::vector<CPU>& getCPUs() const;
+    const std::vector<Tarefa>& getTarefas() const;
+    void reiniciar();
 };
 
 // fila de prontos

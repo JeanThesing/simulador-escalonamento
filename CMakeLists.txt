@@ -58,12 +58,15 @@ target_include_directories(main PRIVATE
 
 add_executable(testeGrafico
     src/testeGrafico.cpp
-
+    src/simulador.cpp
+    src/tarefa.cpp
+    src/cpu.cpp
+    src/relogio.cpp
+    src/escalonador.cpp
     external/imgui/imgui.cpp
     external/imgui/imgui_draw.cpp
     external/imgui/imgui_tables.cpp
     external/imgui/imgui_widgets.cpp
-
     external/rlImGui/rlImGui.cpp
 )
 

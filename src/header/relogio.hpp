@@ -12,6 +12,7 @@ class Relogio{
         void incrementa();
         void decrementa();
         int getTick() const;
+        void setTick(int tick);
         //void pausa();
         // implementar loop do relogio aqui?
 };
