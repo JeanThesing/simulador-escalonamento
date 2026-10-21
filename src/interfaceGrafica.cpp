@@ -367,6 +367,10 @@ void desenharEditorTarefas(Simulador &simulador, std::string &mensagem)
     ImGui::Combo("Novo estado", &estadoSelecionado, estados, IM_ARRAYSIZE(estados));
     ImGui::SetNextItemWidth(180.0f);
     ImGui::InputInt("Tempo restante", &tempoRestante);
+    // Mantem o valor dentro do intervalo permitido enquanto o usuario edita,
+    // impedindo que numeros negativos permaneçam no campo.
+    if (tempoRestante < 0) tempoRestante = 0;
+    if (tempoRestante > t.getDuracao()) tempoRestante = t.getDuracao();
     ImGui::SameLine();
     if (ImGui::Button("Aplicar alteracao")) {
         std::string erro;
