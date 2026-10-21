@@ -1,17 +1,18 @@
 #include "header/interfaceGrafica.hpp"
+#include "header/exportadorGantt.hpp"
 
-// Retorna a cor da tarefa definida no arquivo de configuração (RGB hexadecimal).
+// Cor da célula em que a tarefa não executou naquele tick (mesma no Gantt e na legenda).
+static const ImU32 COR_SEM_EXECUCAO = IM_COL32(65, 70, 80, 255);
+
+// Retorna a cor que será utilizada para desenhar uma tarefa no gráfico de Gantt.
+// Usa a cor informada no arquivo de configuração (RRGGBB), a mesma da imagem exportada.
 ImU32 corTarefa(const Tarefa &tarefa)
 {
-    // Converte a cor hexadecimal para um número inteiro.
-    unsigned int rgb = std::strtoul(tarefa.getCor().c_str(), nullptr, 16);
+    int r = 128, g = 128, b = 128; // cinza caso a cor seja inválida
+    corParaRGB(tarefa.getCor(), r, g, b);
 
-    // Extrai os componentes vermelho, verde e azul.
-    int vermelho = (rgb >> 16) & 0xFF;
-    int verde = (rgb >> 8) & 0xFF;
-    int azul = rgb & 0xFF;
-
-    return IM_COL32(vermelho, verde, azul, 255);
+    // IM_COL32 recebe os valores de vermelho, verde, azul e transparência (0 a 255).
+    return IM_COL32(r, g, b, 255);
 }
 
 // Converte o estado interno da tarefa em um texto que possa ser exibido na interface.
@@ -131,7 +132,9 @@ void desenharGantt(const Simulador &simulador)
             float x = inicio.x + larguraRotulo + t * larguraTick;
 
             // Define a cor conforme a execução da tarefa.
-            ImU32 cor = cpuExecutora >= 0 ? corTarefa(tarefa) : IM_COL32(65, 70, 80, 255);
+            ImU32 cor = cpuExecutora >= 0
+                            ? corTarefa(tarefa)
+                            : COR_SEM_EXECUCAO;
 
             // Desenha a célula correspondente ao tick.
             draw->AddRectFilled(
@@ -273,5 +276,45 @@ void desenharTarefas(const Simulador &simulador)
     }
 
     // Encerra a janela das tarefas.
+    ImGui::End();
+}
+
+// Desenha a legenda dos elementos do gráfico de Gantt mostrado na janela.
+// Só lista o que o gráfico da janela realmente desenha hoje; os marcadores de evento
+// (chegada, término, prazo perdido) aparecem, com legenda própria, na imagem exportada.
+void desenharLegenda(const Simulador &simulador)
+{
+    ImGui::SetNextWindowPos(ImVec2(900, 40), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(280, 260), ImGuiCond_FirstUseEver);
+    ImGui::Begin("Legenda");
+
+    ImDrawList *draw = ImGui::GetWindowDrawList();
+
+    // Desenha um quadradinho de amostra seguido do texto explicativo.
+    auto itemLegenda = [&](ImU32 cor, const char *texto)
+    {
+        ImVec2 p = ImGui::GetCursorScreenPos();
+        draw->AddRectFilled(ImVec2(p.x, p.y + 2), ImVec2(p.x + 26, p.y + 16), cor, 3.0f);
+
+        // Reserva o espaço da amostra para o texto ficar ao lado dela.
+        ImGui::Dummy(ImVec2(26, 18));
+        ImGui::SameLine();
+        ImGui::TextUnformatted(texto);
+    };
+
+    // Uma entrada por tarefa, na ordem do ID, com a mesma cor usada nas células do Gantt.
+    for (const Tarefa &tarefa : simulador.getTarefas())
+    {
+        char texto[48];
+        std::snprintf(texto, sizeof(texto), "Tarefa %d executando", tarefa.getId());
+        itemLegenda(corTarefa(tarefa), texto);
+    }
+
+    itemLegenda(COR_SEM_EXECUCAO, "Sem CPU neste tick (pronta ou inativa)");
+
+    ImGui::Separator();
+    ImGui::TextWrapped("O texto \"CPU n\" dentro da célula indica em qual processador a tarefa executou.");
+    ImGui::TextWrapped("Chegadas, términos e prazos perdidos aparecem na imagem exportada (gantt.svg).");
+
     ImGui::End();
 }

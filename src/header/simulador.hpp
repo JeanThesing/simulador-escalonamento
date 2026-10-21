@@ -67,6 +67,7 @@ public:
     const std::vector<CPU> &getCPUs() const;
     const std::vector<Tarefa> &getTarefas() const;
     const std::vector<EventoGantt> &getEventos() const { return eventos; }
+    const std::string &getAlgoritmo() const { return algoritmo_escalonamento; } // usado no titulo do Gantt exportado
 
     void reiniciar();
 
