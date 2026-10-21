@@ -47,6 +47,9 @@ public:
     void definirAlgoritmo(const std::string& algoritmo);
     void definirQuantidadeCPUs(int quantidade);
     void definirQuantum(int quantum);
+    // Permite editar uma tarefa no estado atual; retorna false se a alteração for inválida.
+    bool editarTarefa(int id, EstadoTarefa novoEstado, int tempoRestante, std::string &erro);
+    int getQuantum() const { return quantum; }
 
     void avancaTick();
     void retrocedeTick();         // funcionara com base no historico do sistema (a ser implementado)
@@ -57,6 +60,7 @@ public:
 
     int getTickAtual() const;
     const std::vector<std::vector<int>> &getHistoricoGantt() const;
+    const std::vector<EstadoSistema> &getHistorico() const { return historico; }
     // O histórico terá esta estrutura: historicoGantt[tick][idCPU] = id da tarefa executada
     // por exemplo:
     // {

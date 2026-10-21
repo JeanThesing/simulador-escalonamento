@@ -34,6 +34,7 @@ namespace
     // Estados de uma tarefa em um tick (os valores >= 0 sao o id da CPU que executou)
     constexpr int INATIVA = -2; // ainda nao chegou ou ja terminou a ativacao
     constexpr int PRONTA = -1;  // na fila de prontas, esperando CPU
+    constexpr int SUSPENSA = -3; // tarefa suspensa: preto com padrão pontilhado
 
     // ---------- Elementos graficos (usados na grade e na legenda) ----------
 
@@ -59,6 +60,16 @@ namespace
     {
         o << "<rect x=\"" << x << "\" y=\"" << y << "\" width=\"" << w << "\" height=\"" << h
           << "\" fill=\"none\" stroke=\"#8A8A8A\" stroke-dasharray=\"3,2\"/>\n";
+    }
+
+    // Tarefa suspensa: fundo preto com pontos claros para distingui-la da pronta.
+    void desenharSuspensa(std::ostream &o, int x, int y, int w, int h)
+    {
+        o << "<rect x=\"" << x << "\" y=\"" << y << "\" width=\"" << w << "\" height=\"" << h
+          << "\" fill=\"#000\" stroke=\"#222\"/>\n";
+        for (int px = x + 5; px < x + w - 2; px += 8)
+            for (int py = y + 5; py < y + h - 2; py += 8)
+                o << "<circle cx=\"" << px << "\" cy=\"" << py << "\" r=\"1.5\" fill=\"#CCC\"/>\n";
     }
 
     // Triangulo de 10px. "base" e o y da base (apontando para cima) ou da ponta (para baixo).
@@ -122,6 +133,11 @@ bool exportarGanttSVG(const Simulador &simulador, const std::string &caminho, st
         for (size_t cpu = 0; cpu < gantt[t].size(); cpu++)
             if (linha.count(gantt[t][cpu]))
                 est[linha[gantt[t][cpu]]][t] = static_cast<int>(cpu);
+    const auto &historicoEstados = simulador.getHistorico();
+    for (int t = 0; t < total && t < static_cast<int>(historicoEstados.size()); t++)
+        for (const Tarefa &snapshot : historicoEstados[static_cast<size_t>(t)].tarefas)
+            if (linha.count(snapshot.getId()) && snapshot.getEstado() == EstadoTarefa::SUSPENSA && est[linha[snapshot.getId()]][t] == INATIVA)
+                est[linha[snapshot.getId()]][t] = SUSPENSA;
 
     // Uma ativacao vai do evento CHEGADA ao evento TERMINO; nesse intervalo, os ticks sem CPU
     // sao espera na fila de prontas. (Os eventos estao em ordem cronologica.)
@@ -176,6 +192,8 @@ bool exportarGanttSVG(const Simulador &simulador, const std::string &caminho, st
              { desenharBarra(itens, x, y - 8, AMOSTRA, 16, *ordem[i], ""); });
     item("Pronta (aguardando CPU)", [&](int x, int y)
          { desenharPronta(itens, x, y - 8, AMOSTRA, 16); });
+    item("Suspensa (preto pontilhado)", [&](int x, int y)
+         { desenharSuspensa(itens, x, y - 8, AMOSTRA, 16); });
     item("Chegada (ativacao)", [&](int x, int y)
          { desenharTriangulo(itens, x + AMOSTRA / 2, y + 6, true, COR_CHEGADA); });
     item("Termino da execucao", [&](int x, int y)
@@ -229,6 +247,8 @@ bool exportarGanttSVG(const Simulador &simulador, const std::string &caminho, st
             const int x = MARGEM_ESQ + ini * LARGURA_TICK, w = (t - ini) * LARGURA_TICK;
             if (estado == PRONTA)
                 desenharPronta(o, x, y, w, h);
+            else if (estado == SUSPENSA)
+                desenharSuspensa(o, x, y, w, h);
             else if (estado >= 0)
                 desenharBarra(o, x, y, w, h, *ordem[r], "C" + std::to_string(estado));
         }

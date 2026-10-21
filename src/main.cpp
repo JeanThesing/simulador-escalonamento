@@ -35,9 +35,30 @@ int main(int argc, char *argv[])
         getline(cin, caminho); // sem argumento: pergunta ao usuario
     }
     Configuracao config; // guarda o que foi lido do arquivo de configuracao
-    // Encerra se o arquivo tiver erros (os erros ja foram mostrados)
+    // Se a configuração for inválida, mantém uma janela aberta para explicar os erros.
     if (!testeLeitor(caminho, config))
+    {
+        InitWindow(900, 500, "Erro de configuracao - Simulador de Escalonamento");
+        SetTargetFPS(60);
+        rlImGuiSetup(true);
+        while (!WindowShouldClose())
+        {
+            BeginDrawing();
+            ClearBackground(Color{24, 27, 34, 255});
+            rlImGuiBegin();
+            ImGui::Begin("Nao foi possivel carregar a configuracao");
+            ImGui::TextWrapped("Verifique o caminho do arquivo e corrija os problemas abaixo:");
+            for (const string &erro : config.erros) ImGui::BulletText("%s", erro.c_str());
+            for (const string &aviso : config.avisos) ImGui::BulletText("Aviso: %s", aviso.c_str());
+            ImGui::TextWrapped("Feche esta janela e execute novamente com um arquivo valido.");
+            ImGui::End();
+            rlImGuiEnd();
+            EndDrawing();
+        }
+        rlImGuiShutdown();
+        CloseWindow();
         return 1;
+    }
 
     int algoritmo = (config.algoritmo == "EDF") ? 1 : 0;
     int quantidadeCPUs = config.qtdeCpus;
@@ -66,6 +87,10 @@ int main(int argc, char *argv[])
     //==============================
 
     string mensagem = ""; // resultado da ultima execucao completa, mostrado ao usuario
+    for (const string &aviso : config.avisos) {
+        if (!mensagem.empty()) mensagem += "\n";
+        mensagem += "Aviso: " + aviso;
+    }
     // O loop principal mantém a janela aberta até que o usuário a feche.
     while (!WindowShouldClose())
     {
@@ -147,19 +172,21 @@ int main(int argc, char *argv[])
 
         ImGui::SameLine();
 
-        // Define a quantidade de CPUs.
+        // Define a quantidade de CPUs (limitada ao número de tarefas configuradas).
         ImGui::SetNextItemWidth(100);
+        int maxCPUs = static_cast<int>(config.tarefas.size());
+        if (maxCPUs < 1) maxCPUs = 1;
+        if (quantidadeCPUs > maxCPUs) quantidadeCPUs = maxCPUs;
 
-        if (ImGui::SliderInt("CPUs", &quantidadeCPUs, 1, 8))
+        if (ImGui::SliderInt("CPUs", &quantidadeCPUs, 1, maxCPUs))
             configuracaoAlterada = true;
 
         ImGui::SameLine();
 
-        // Define o quantum.
-        // ImGui::SetNextItemWidth(120);
-
-        // if (ImGui::SliderInt("Quantum", &quantum, 1, 10))
-        //     configuracaoAlterada = true;
+        // Define o quantum pela interface.
+        ImGui::SetNextItemWidth(120);
+        if (ImGui::SliderInt("Quantum", &quantum, 1, 1000))
+            configuracaoAlterada = true;
 
         // Aplica as alterações e reinicia a simulação.
         if (configuracaoAlterada)
@@ -180,6 +207,8 @@ int main(int argc, char *argv[])
         // Desenha o gráfico e a tabela com os dados atualizados do simulador.
         desenharGantt(simulador);
         desenharTarefas(simulador);
+        desenharEditorTarefas(simulador, mensagem);
+        desenharCPUs(simulador);
         desenharLegenda(simulador);
 
         // Finaliza o desenho dos componentes ImGui.
