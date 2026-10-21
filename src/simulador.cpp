@@ -16,6 +16,13 @@ void Simulador::criaEscalonador()
         escalonador = make_unique<EscalonadorRM>();
     else if (algoritmo_escalonamento == "EDF")
         escalonador = make_unique<EscalonadorEDF>();
+    else
+    {
+        // Impede o uso de um escalonador anterior.
+        escalonador.reset();
+        cerr << "Erro: algoritmo de escalonamento desconhecido: "
+             << algoritmo_escalonamento << endl;
+    }
 }
 
 void Simulador::criaCPUS()
@@ -35,7 +42,7 @@ void Simulador::criaTarefas()
 
     // As tarefas vêm sempre do arquivo de configuração (guardadas em tarefasIniciais)
     // atribui = e não acrescenta emplace_back. com o emplace_back, cada reset duplicaria as tarefas
-    
+
     tarefas = tarefasIniciais; // copia, restaurando o estado inicial de cada tarefa
 }
 
@@ -170,6 +177,66 @@ void Simulador::retrocedeTick()
     }
 }
 
+void Simulador::escalonarCPUs()
+{
+    // Candidatas: toda tarefa pronta ou executando, em qualquer CPU.
+    // As que estao executando continuam EXECUTANDO durante a selecao,
+    // entao o desempate favorece quem ja estava rodando.
+    vector<Tarefa *> restantes;
+    for (Tarefa &tarefa : tarefas)
+        if (tarefa.getEstado() == EstadoTarefa::PRONTA ||
+            tarefa.getEstado() == EstadoTarefa::EXECUTANDO)
+            restantes.push_back(&tarefa);
+
+    // Escolhe as N tarefas de maior prioridade (N = quantidade de CPUs)
+    // Se for registrar o evento de sorteio, leia escalonador->houveSorteio() logo apos cada selecionar().
+    vector<Tarefa *> escolhidas;
+    for (size_t k = 0; k < cpus.size() && !restantes.empty(); k++)
+    {
+        Tarefa *melhor = escalonador->selecionar(restantes);
+        if (!melhor)
+            break;
+        escolhidas.push_back(melhor);
+        restantes.erase(find(restantes.begin(), restantes.end(), melhor));
+    }
+
+    // Preempcao: libera as CPUs cuja tarefa nao foi escolhida.
+    for (CPU &cpu : cpus)
+    {
+        Tarefa *atual = cpu.getTarefaAtual();
+        if (atual && find(escolhidas.begin(), escolhidas.end(), atual) == escolhidas.end())
+            cpu.liberar();
+    }
+
+    // As escolhidas que ainda nao estao em nenhuma CPU ocupam uma CPU livre.
+    // As que ja estao executando ficam onde estao (sem migracao entre CPUs)
+    for (Tarefa *tarefa : escolhidas)
+    {
+        if (tarefa->getEstado() == EstadoTarefa::EXECUTANDO)
+            continue;
+
+        for (CPU &cpu : cpus)
+        {
+            if (cpu.estaLivre())
+            {
+                cpu.atribuirTarefa(tarefa);
+                break;
+            }
+        }
+    }
+
+    // CPU sem tarefa neste tick e desligada (requisito 1.2)
+    for (CPU &cpu : cpus)
+        if (!cpu.getTarefaAtual())
+            cpu.desligar();
+}
+
+/*
+========================================================================
+======================EXECUCAO DA SIMULACAO========================================
+========================================================================
+*/
+
 void Simulador::executarSimulacao()
 {
     // Garante que exista um escalonador válido antes de executar.
@@ -182,62 +249,9 @@ void Simulador::executarSimulacao()
         return;
     }
 
-    // Impede que a mesma tarefa seja atribuída a mais de uma CPU no tick.
-    vector<Tarefa *> tarefasAtribuidas;
-
-    for (CPU &cpu : cpus)
-    {
-        vector<Tarefa *> candidatas;
-
-        // Monta a lista de tarefas que esta CPU pode executar.
-        for (Tarefa &tarefa : tarefas)
-        {
-            bool nestaCPU = cpu.getTarefaAtual() == &tarefa;
-
-            bool emOutraCPU =
-                tarefa.getEstado() == EstadoTarefa::EXECUTANDO &&
-                !nestaCPU;
-
-            // Verifica se outra CPU já recebeu esta tarefa durante o escalonamento.
-            bool jaAtribuida =
-                find(tarefasAtribuidas.begin(),
-                     tarefasAtribuidas.end(),
-                     &tarefa) != tarefasAtribuidas.end();
-
-            // Tarefas em execução em outra CPU ou já atribuídas são descartadas.
-            if (emOutraCPU || jaAtribuida)
-                continue;
-
-            // Inclui tarefas prontas e a tarefa que já ocupa esta CPU,
-            // permitindo que o escalonador decida se ela deve continuar executando.
-            if (tarefa.getEstado() == EstadoTarefa::PRONTA || nestaCPU)
-                candidatas.push_back(&tarefa);
-        }
-
-        // O algoritmo RM ou EDF escolhe a tarefa de maior prioridade.
-        // A decisão também pode manter a tarefa atual ou deixar a CPU ociosa.
-        Tarefa *escolhida = escalonador->selecionar(candidatas);
-
-        // Se a escolha mudar, libera a tarefa anterior antes de atribuir a nova.
-        if (escolhida != cpu.getTarefaAtual())
-        {
-            cpu.liberar();
-
-            if (escolhida)
-                cpu.atribuirTarefa(escolhida);
-        }
-
-        // Registra a tarefa escolhida para evitar atribuições duplicadas.
-        if (cpu.getTarefaAtual()) // Verifica se a CPU possui uma tarefa atribuida
-            tarefasAtribuidas.push_back(cpu.getTarefaAtual());
-        /*//se tiver adiciona a tarefa ao vetor tarefasAtribuidas, impedindo que outra CPU execute a mesma tarefa.*/
-        else
-        {
-            cpu.desligar(); // nao ha tarefa para esta CPU neste tick: ela e desligada (requisito 1.2)
-
-            // atribuirTarefa() de CPU liga a CPU, entao se nao ha tarefa, desligar() deve ser chamado para manter a CPU desligada
-        }
-    }
+    // Decide qual tarefa ocupa cada CPU neste tick (escalonamento global entre todas as CPUs).
+    // Ela também desliga as CPUs que ficaram sem tarefa (requisito 1.2).
+    escalonarCPUs();
 
     // Registra o estado das CPUs antes de executar o tick.
     salvarTickGantt();
@@ -257,6 +271,10 @@ void Simulador::executarSimulacao()
     // O histórico deve refletir o estado posterior à execução.
     atualizaFilaDeProntas();
 }
+
+/*====================================================================
+======================================================================
+*/
 
 void Simulador::salvaHistoricoTick()
 {

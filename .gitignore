@@ -1,2 +1,8 @@
 # Arquivos gerados pelo CMake
 build/
+
+# Gráfico gerado pelo simulador
+gantt.svg
+
+# Configurações locais do Dear ImGui
+imgui.ini

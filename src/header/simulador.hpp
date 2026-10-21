@@ -51,6 +51,7 @@ public:
     void avancaTick();
     void retrocedeTick();         // funcionara com base no historico do sistema (a ser implementado)
     void atualizaFilaDeProntas(); // atualiza a fila de tarefas prontas de acordo com o algoritmo de escalonamento
+    void escalonarCPUs(); // seleciona as tarefas a serem executadas nas cpus
     void executarSimulacao();
     void salvaHistoricoTick();
 
