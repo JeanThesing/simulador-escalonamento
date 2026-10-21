@@ -1,13 +1,13 @@
 #pragma once
 #include <iostream>
-#include "escalonador.hpp"
+#include "escalonadorPrioridade.hpp"
 
 // Prioridade determinada pelo menor prazoAbsoluto
 // Earliest Deadline First (EDF)
 // preemptivo e dinamico
 
 
-class EscalonadorEDF : public Escalonador
+class EscalonadorEDF : public EscalonadorPrioridade
 {
 protected:
     // menor prazoAbsoluto = maior prioridade, por isso o sinal negativo

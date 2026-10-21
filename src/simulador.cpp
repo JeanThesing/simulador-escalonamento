@@ -34,8 +34,9 @@ void Simulador::criaTarefas()
     // tarefas.emplace_back(3, "0000FF", 2, 2, 7, 7);
 
     // As tarefas vêm sempre do arquivo de configuração (guardadas em tarefasIniciais)
-    // Copiar (em vez de emplace_back) também garante o estado inicial no reiniciar().
-    tarefas = tarefasIniciais;
+    // atribui = e não acrescenta emplace_back. com o emplace_back, cada reset duplicaria as tarefas
+    
+    tarefas = tarefasIniciais; // copia, restaurando o estado inicial de cada tarefa
 }
 
 void Simulador::atualizaFilaDeProntas()
@@ -177,9 +178,6 @@ void Simulador::executarSimulacao()
 
     for (CPU &cpu : cpus)
     {
-        if (!cpu.getLigado())
-            cpu.ligar();
-
         vector<Tarefa *> candidatas;
 
         // Monta a lista de tarefas que esta CPU pode executar.
@@ -217,8 +215,15 @@ void Simulador::executarSimulacao()
         }
 
         // Registra a tarefa escolhida para evitar atribuições duplicadas.
-        if (cpu.getTarefaAtual())
+        if (cpu.getTarefaAtual()) // Verifica se a CPU possui uma tarefa atribuida
             tarefasAtribuidas.push_back(cpu.getTarefaAtual());
+        /*//se tiver adiciona a tarefa ao vetor tarefasAtribuidas, impedindo que outra CPU execute a mesma tarefa.*/
+        else
+        {
+            cpu.desligar(); // nao ha tarefa para esta CPU neste tick: ela e desligada (requisito 1.2)
+
+            // atribuirTarefa() de CPU liga a CPU, entao se nao ha tarefa, desligar() deve ser chamado para manter a CPU desligada
+        }
     }
 
     // Atualiza a fila de prontas após as decisões do escalonador.
@@ -226,6 +231,11 @@ void Simulador::executarSimulacao()
 
     // Registra quais tarefas serão executadas em cada CPU neste tick.
     salvarTickGantt();
+
+    // Soma 1 tick ao tempo desligado de cada CPU que ficou sem tarefa neste tick.
+    for (CPU &cpu : cpus)
+        if (!cpu.getLigado())
+            cpu.incrementaTempoDesligado(1);
 
     // Avança a execução das tarefas atribuídas às CPUs.
     for (CPU &cpu : cpus)
@@ -308,7 +318,7 @@ void Simulador::reiniciar()
     filaDeProntas.clear();
 
     // Restaura as tarefas ao estado inicial.
-    tarefas = tarefasIniciais;
+    criaTarefas();
 
     // Reinicia os componentes do sistema.
     cpus.clear();
@@ -368,6 +378,13 @@ bool Simulador::executarCompleto(int limiteTicks)
 void Simulador::definirTarefas(const std::vector<Tarefa> &tarefas)
 {
     tarefasIniciais = tarefas;
+
+    // Ordena por ID crescente: o Gantt desenha o menor id mais perto do eixo x,
+    // e o arquivo de configuracao pode trazer as tarefas em qualquer ordem.
+    sort(tarefasIniciais.begin(), tarefasIniciais.end(),
+         [](const Tarefa &a, const Tarefa &b)
+         { return a.getId() < b.getId(); });
+
     this->tarefas = tarefasIniciais;
 }
 

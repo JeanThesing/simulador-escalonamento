@@ -38,7 +38,7 @@ set(CORE_SOURCES
     src/tarefa.cpp
     src/simulador.cpp
     src/leitorConfig.cpp
-    src/escalonador.cpp
+    src/escalonadorPrioridade.cpp
 )
 
 # =========================

@@ -1,12 +1,12 @@
 #pragma once
 #include <iostream>
-#include "escalonador.hpp"
+#include "escalonadorPrioridade.hpp"
 
 // Prioridade determinada pelo menor periodo
 // Rate Monotonic (RM)
 // preemptivo e estatico
 
-class EscalonadorRM : public Escalonador
+class EscalonadorRM : public EscalonadorPrioridade
 {
 protected:
     /*Prioridade e determinada pelo período (Pi)

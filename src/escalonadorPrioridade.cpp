@@ -1,7 +1,7 @@
-#include "header/escalonador.hpp"
+#include "header/escalonadorPrioridade.hpp"
 #include <cstdlib>
 
-Tarefa *Escalonador::selecionar(const std::vector<Tarefa *> &prontas)
+Tarefa *EscalonadorPrioridade::selecionar(const std::vector<Tarefa *> &prontas)
 {
     sorteou = false; // zera a cada chamada de selecionar
     std::vector<Tarefa *> empatadas; // tarefas empatadas na primeira posicao
@@ -37,7 +37,7 @@ Tarefa *Escalonador::selecionar(const std::vector<Tarefa *> &prontas)
 
 // prioridade do algoritmo. se empatar, aplica o desempate
 // retorna: >0 se a vence, <0 se b vence, 0 se empate total
-int Escalonador::comparar(const Tarefa *a, const Tarefa *b) const
+int EscalonadorPrioridade::comparar(const Tarefa *a, const Tarefa *b) const
 {
     if (prioridade(a) != prioridade(b))
         return prioridade(a) > prioridade(b) ? 1 : -1; //1 se a vence, -1 se b vence
@@ -45,7 +45,7 @@ int Escalonador::comparar(const Tarefa *a, const Tarefa *b) const
     return desempatar(a, b); //1 se a vence, -1 se b vence, e 0 se empate total (sorteio)
 }
 
-int Escalonador::desempatar(const Tarefa *a, const Tarefa *b) const
+int EscalonadorPrioridade::desempatar(const Tarefa *a, const Tarefa *b) const
 {
     // 1- a que ja estava executando (evita troca de contexto da msm tarefa)
     bool aExecutando = (a->getEstado() == EstadoTarefa::EXECUTANDO);

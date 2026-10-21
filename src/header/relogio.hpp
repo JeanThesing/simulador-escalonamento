@@ -10,7 +10,7 @@ class Relogio{
         Relogio();
         ~Relogio();
         void incrementa();
-        void decrementa();
+        //void decrementa(); nao sera usado
         int getTick() const;
         void setTick(int tick);
         //void pausa();

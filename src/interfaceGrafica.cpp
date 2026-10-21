@@ -1,22 +1,17 @@
 #include "header/interfaceGrafica.hpp"
 
-// Retorna a cor que será utilizada para desenhar uma tarefa no gráfico de Gantt.
-// Cada ID de tarefa recebe uma cor. O ID -1 representa uma CPU ociosa.
-ImU32 corTarefa(int id)
+// Retorna a cor da tarefa definida no arquivo de configuração (RGB hexadecimal).
+ImU32 corTarefa(const Tarefa &tarefa)
 {
-    // IM_COL32 recebe os valores de vermelho, verde, azul e transparência.
-    // Os valores RGB vão de 0 a 255.
-    const ImU32 cores[] = {
-        IM_COL32(230, 90, 80, 255),
-        IM_COL32(70, 170, 120, 255),
-        IM_COL32(80, 140, 230, 255),
-        IM_COL32(190, 120, 220, 255),
-        IM_COL32(230, 190, 70, 255)};
+    // Converte a cor hexadecimal para um número inteiro.
+    unsigned int rgb = std::strtoul(tarefa.getCor().c_str(), nullptr, 16);
 
-    // Se não houver tarefa, retorna cinza.
-    // Caso contrário, escolhe uma das cinco cores usando o ID da tarefa.
-    return id < 0 ? IM_COL32(65, 70, 80, 255)
-                  : cores[id % 5];
+    // Extrai os componentes vermelho, verde e azul.
+    int vermelho = (rgb >> 16) & 0xFF;
+    int verde = (rgb >> 8) & 0xFF;
+    int azul = rgb & 0xFF;
+
+    return IM_COL32(vermelho, verde, azul, 255);
 }
 
 // Converte o estado interno da tarefa em um texto que possa ser exibido na interface.
@@ -48,12 +43,13 @@ const char *nomeEstado(EstadoTarefa estado)
 }
 
 // Desenha o gráfico de Gantt usando o histórico real do simulador.
-// Cada linha representa uma CPU e cada coluna representa um tick.
+// ma linha por tarefa
 void desenharGantt(const Simulador &simulador)
 {
-    // Obtém o histórico de execução e a lista de tarefas.
+    // Obtém o histórico de execução, lista de cpus e a lista de tarefas.
     const auto &historico = simulador.getHistoricoGantt();
     const auto &tarefas = simulador.getTarefas();
+    const auto &cpus = simulador.getCPUs();
 
     // Cria a janela do gráfico.
     ImGui::Begin("Grafico de Gantt");
@@ -80,7 +76,7 @@ void desenharGantt(const Simulador &simulador)
 
     // Calcula o espaço necessário para o gráfico.
     float largura = larguraRotulo + historico.size() * larguraTick;
-    float altura = 30.0f + tarefas.size() * alturaLinha;
+    float altura = 30.0f + (tarefas.size() + cpus.size()) * alturaLinha;
 
     // Reserva espaço para permitir a exibição e rolagem do gráfico.
     ImGui::Dummy(ImVec2(largura, altura));
@@ -103,7 +99,8 @@ void desenharGantt(const Simulador &simulador)
     for (size_t i = 0; i < tarefas.size(); ++i)
     {
         const Tarefa &tarefa = tarefas[i];
-        float y = inicio.y + 30 + i * alturaLinha;
+        // A tarefa com menor ID é desenhada na linha mais baixa.
+        float y = inicio.y + 30 + (tarefas.size() - 1 - i) * alturaLinha; // menor ID embaixo
 
         // Exibe o identificador da tarefa.
         char nomeTarefa[24];
@@ -134,9 +131,7 @@ void desenharGantt(const Simulador &simulador)
             float x = inicio.x + larguraRotulo + t * larguraTick;
 
             // Define a cor conforme a execução da tarefa.
-            ImU32 cor = cpuExecutora >= 0
-                            ? corTarefa(tarefa.getId())
-                            : IM_COL32(65, 70, 80, 255);
+            ImU32 cor = cpuExecutora >= 0 ? corTarefa(tarefa) : IM_COL32(65, 70, 80, 255);
 
             // Desenha a célula correspondente ao tick.
             draw->AddRectFilled(
@@ -155,6 +150,72 @@ void desenharGantt(const Simulador &simulador)
                     ImVec2(x + 8, y + 9),
                     IM_COL32(255, 255, 255, 255),
                     nomeCPU);
+            }
+        }
+        // Desenha os eventos da tarefa no gráfico de Gantt.
+        for (const auto &evento : simulador.getEventos())
+        {
+            // Ignora eventos de outras tarefas.
+            if (evento.idTarefa != tarefa.getId())
+                continue;
+
+            // Calcula a posição horizontal do evento no gráfico.
+            float x = inicio.x + larguraRotulo + evento.tick * larguraTick;
+
+            switch (evento.tipo)
+            {
+            case TipoEvento::CHEGADA:
+                // Triângulo verde apontando para baixo.
+                draw->AddTriangleFilled(
+                    ImVec2(x - 5, y),
+                    ImVec2(x + 5, y),
+                    ImVec2(x, y + 10),
+                    IM_COL32(80, 220, 120, 255));
+                break;
+
+            case TipoEvento::TERMINO:
+                // Triângulo azul apontando para cima.
+                draw->AddTriangleFilled(
+                    ImVec2(x - 5, y + alturaLinha),
+                    ImVec2(x + 5, y + alturaLinha),
+                    ImVec2(x, y + alturaLinha - 10),
+                    IM_COL32(80, 160, 255, 255));
+                break;
+
+            case TipoEvento::PRAZO_PERDIDO:
+                // X vermelho indicando que a tarefa perdeu o prazo.
+                draw->AddLine(
+                    ImVec2(x - 6, y + 4),
+                    ImVec2(x + 6, y + alturaLinha - 4),
+                    IM_COL32(255, 60, 60, 255), 2.0f);
+
+                draw->AddLine(
+                    ImVec2(x - 6, y + alturaLinha - 4),
+                    ImVec2(x + 6, y + 4),
+                    IM_COL32(255, 60, 60, 255), 2.0f);
+                break;
+            }
+        }
+    }
+
+    // Uma linha por CPU: marca os ticks em que ela ficou desligada (sem tarefa)
+    for (size_t c = 0; c < cpus.size(); ++c)
+    {
+        float y = inicio.y + 30 + (tarefas.size() + c) * alturaLinha;
+
+        char nomeCPU[16];
+        std::snprintf(nomeCPU, sizeof(nomeCPU), "CPU %d", cpus[c].getId());
+        draw->AddText(ImVec2(inicio.x, y + 8), IM_COL32(230, 230, 230, 255), nomeCPU);
+
+        for (size_t t = 0; t < historico.size(); ++t)
+        {
+            // -1 no historico = CPU sem tarefa neste tick = desligada
+            if (c < historico[t].size() && historico[t][c] == -1)
+            {
+                float x = inicio.x + larguraRotulo + t * larguraTick;
+                draw->AddRectFilled(ImVec2(x + 1, y + 1), ImVec2(x + larguraTick - 2, y + alturaLinha - 2),
+                                    IM_COL32(40, 40, 45, 255), 3.0f);
+                draw->AddText(ImVec2(x + 8, y + 9), IM_COL32(150, 150, 150, 255), "off");
             }
         }
     }
