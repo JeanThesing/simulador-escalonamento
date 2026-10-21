@@ -7,6 +7,9 @@
 # .\build\main.exe "C:\teste-config\config.txt"  
 #cmake --build build
 
+# excluir pasta build
+#Remove-Item -Recurse -Force build
+
 # ./build/testeGrafico.exe
 
 cmake_minimum_required(VERSION 3.20)
@@ -15,6 +18,13 @@ project(simulador_escalonamento)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# =========================
+# Raylib estática
+# =========================
+
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+add_subdirectory(external/raylib)
 
 # =========================
 # Arquivos principais
@@ -65,7 +75,12 @@ target_include_directories(testeGrafico PRIVATE
 
 target_link_libraries(testeGrafico PRIVATE
     raylib
-    opengl32
-    gdi32
-    winmm
 )
+
+if(MINGW)
+    target_link_options(testeGrafico PRIVATE
+        -static
+        -static-libgcc
+        -static-libstdc++
+    )
+endif()
