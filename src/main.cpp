@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     srand(67); // gera msm sequencia de num aleaotiros
 
     // Cria a janela da aplicação com largura 1200 e altura 750 pixels.
-    InitWindow(1200, 750, "Simulador de Escalonamento");
+    InitWindow(1600, 900, "Simulador de Escalonamento");
 
     // Define a taxa de atualização da janela: até 60 quadros por segundo.
     SetTargetFPS(60);
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
             simulador.reiniciar();
             mensagem = "";
         }
-        
+
         ImGui::SameLine();
 
         if (ImGui::Button("Executar tudo"))
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
         bool configuracaoAlterada = false;
 
         // Seleciona o algoritmo de escalonamento.
-        const char* algoritmos[] = {"RM", "EDF"};
+        const char *algoritmos[] = {"RM", "EDF"};
 
         ImGui::SetNextItemWidth(100);
 
@@ -165,8 +165,7 @@ int main(int argc, char *argv[])
         if (configuracaoAlterada)
         {
             simulador.definirAlgoritmo(
-                algoritmo == 0 ? "RM" : "EDF"
-            );
+                algoritmo == 0 ? "RM" : "EDF");
 
             simulador.definirQuantidadeCPUs(quantidadeCPUs);
             simulador.definirQuantum(quantum);
@@ -180,6 +179,7 @@ int main(int argc, char *argv[])
         // Desenha o gráfico e a tabela com os dados atualizados do simulador.
         desenharGantt(simulador);
         desenharTarefas(simulador);
+        desenharCPUs(simulador);
         desenharLegenda(simulador);
 
         // Finaliza o desenho dos componentes ImGui.

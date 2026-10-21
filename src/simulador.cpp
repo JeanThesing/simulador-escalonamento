@@ -196,6 +196,14 @@ void Simulador::escalonarCPUs()
         Tarefa *melhor = escalonador->selecionar(restantes);
         if (!melhor)
             break;
+
+        // Registra o sorteio se a tarefa nao estava executando.
+        // Verifica houveSorteio() logo apos selecionar(), pois a flag e reiniciada.
+        if (escalonador->houveSorteio() && melhor->getEstado() != EstadoTarefa::EXECUTANDO)
+        {
+            eventos.push_back({relogio.getTick(), melhor->getId(), TipoEvento::SORTEIO});
+        }
+
         escolhidas.push_back(melhor);
         restantes.erase(find(restantes.begin(), restantes.end(), melhor));
     }

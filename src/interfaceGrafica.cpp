@@ -43,6 +43,49 @@ const char *nomeEstado(EstadoTarefa estado)
     }
 }
 
+// Desenha a tabela com o estado de cada CPU (ligada/desligada, tarefa atual e tempo desligada).
+void desenharCPUs(const Simulador &simulador)
+{
+    ImGui::Begin("CPUs");
+
+    if (ImGui::BeginTable(
+            "TabelaCPUs",
+            4,
+            ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable))
+    {
+        ImGui::TableSetupColumn("CPU");
+        ImGui::TableSetupColumn("Estado");
+        ImGui::TableSetupColumn("Tarefa");
+        ImGui::TableSetupColumn("Tempo desligada");
+        ImGui::TableHeadersRow();
+
+        for (const CPU &cpu : simulador.getCPUs())
+        {
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", cpu.getId());
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", cpu.getLigado() ? "Ligada" : "Desligada");
+
+            ImGui::TableNextColumn();
+            if (cpu.getTarefaAtual())
+                ImGui::Text("T%d", cpu.getTarefaAtual()->getId());
+            else
+                ImGui::Text("-");
+
+            // Total acumulado de ticks em que a CPU ficou sem tarefa (requisito 1.2).
+            ImGui::TableNextColumn();
+            ImGui::Text("%d ticks", cpu.getTempoDesligado());
+        }
+
+        ImGui::EndTable();
+    }
+
+    ImGui::End();
+}
+
 // Desenha o gráfico de Gantt usando o histórico real do simulador.
 // ma linha por tarefa
 void desenharGantt(const Simulador &simulador)
@@ -197,11 +240,24 @@ void desenharGantt(const Simulador &simulador)
                     ImVec2(x + 6, y + 4),
                     IM_COL32(255, 60, 60, 255), 2.0f);
                 break;
+
+            case TipoEvento::SORTEIO:
+            {
+                // Losango laranja no meio da celula: a tarefa foi escolhida por sorteio
+                // (empate total nos criterios de desempate) e comecou a executar neste tick.
+                float cy = y + alturaLinha / 2;
+                ImVec2 losango[4] = {
+                    ImVec2(x, cy - 8), ImVec2(x + 8, cy),
+                    ImVec2(x, cy + 8), ImVec2(x - 8, cy)};
+                draw->AddConvexPolyFilled(losango, 4, IM_COL32(255, 159, 28, 255));
+                draw->AddPolyline(losango, 4, IM_COL32(20, 20, 20, 255), ImDrawFlags_Closed, 1.5f);
+                break;
+            }
             }
         }
     }
 
-    // Uma linha por CPU: marca os ticks em que ela ficou desligada (sem tarefa)
+    // Uma linha por CPU: marca os períodos em que ela ficou desligada (sem tarefa).
     for (size_t c = 0; c < cpus.size(); ++c)
     {
         float y = inicio.y + 30 + (tarefas.size() + c) * alturaLinha;
@@ -210,16 +266,44 @@ void desenharGantt(const Simulador &simulador)
         std::snprintf(nomeCPU, sizeof(nomeCPU), "CPU %d", cpus[c].getId());
         draw->AddText(ImVec2(inicio.x, y + 8), IM_COL32(230, 230, 230, 255), nomeCPU);
 
-        for (size_t t = 0; t < historico.size(); ++t)
+        // Junta ticks seguidos desligados em uma única faixa, mostrando a duração do período.
+        size_t t = 0;
+        while (t < historico.size())
         {
-            // -1 no historico = CPU sem tarefa neste tick = desligada
-            if (c < historico[t].size() && historico[t][c] == -1)
+            // -1 no histórico = CPU sem tarefa neste tick = desligada
+            bool desligada = c < historico[t].size() && historico[t][c] == -1;
+
+            if (!desligada)
             {
-                float x = inicio.x + larguraRotulo + t * larguraTick;
-                draw->AddRectFilled(ImVec2(x + 1, y + 1), ImVec2(x + larguraTick - 2, y + alturaLinha - 2),
-                                    IM_COL32(40, 40, 45, 255), 3.0f);
-                draw->AddText(ImVec2(x + 8, y + 9), IM_COL32(150, 150, 150, 255), "off");
+                t++;
+                continue;
             }
+
+            // Avança até o fim do período desligado.
+            size_t inicioFaixa = t;
+
+            while (t < historico.size() &&
+                   c < historico[t].size() &&
+                   historico[t][c] == -1)
+            {
+                t++;
+            }
+
+            float x1 = inicio.x + larguraRotulo + inicioFaixa * larguraTick;
+            float x2 = inicio.x + larguraRotulo + t * larguraTick;
+
+            draw->AddRectFilled(
+                ImVec2(x1 + 1, y + 1),
+                ImVec2(x2 - 2, y + alturaLinha - 2),
+                IM_COL32(40, 40, 45, 255), 3.0f);
+
+            char texto[32];
+            std::snprintf(texto, sizeof(texto), "off (%zu)", t - inicioFaixa);
+
+            draw->AddText(
+                ImVec2(x1 + 8, y + 9),
+                IM_COL32(150, 150, 150, 255),
+                texto);
         }
     }
 
@@ -280,8 +364,8 @@ void desenharTarefas(const Simulador &simulador)
 }
 
 // Desenha a legenda dos elementos do gráfico de Gantt mostrado na janela.
-// Só lista o que o gráfico da janela realmente desenha hoje; os marcadores de evento
-// (chegada, término, prazo perdido) aparecem, com legenda própria, na imagem exportada.
+// Lista as cores das células e os marcadores de evento (chegada, término, prazo perdido,
+// sorteio); a imagem exportada tem a sua própria legenda com os mesmos elementos.
 void desenharLegenda(const Simulador &simulador)
 {
     ImGui::SetNextWindowPos(ImVec2(900, 40), ImGuiCond_FirstUseEver);
@@ -311,10 +395,14 @@ void desenharLegenda(const Simulador &simulador)
     }
 
     itemLegenda(COR_SEM_EXECUCAO, "Sem CPU neste tick (pronta ou inativa)");
+    itemLegenda(IM_COL32(40, 40, 45, 255), "CPU desligada (off (N) = N ticks seguidos)");
 
     ImGui::Separator();
-    ImGui::TextWrapped("O texto \"CPU n\" dentro da célula indica em qual processador a tarefa executou.");
-    ImGui::TextWrapped("Chegadas, términos e prazos perdidos aparecem na imagem exportada (gantt.svg).");
+    ImGui::TextColored(ImVec4(0.31f, 0.86f, 0.47f, 1), "Triangulo verde (para baixo): chegada");
+    ImGui::TextColored(ImVec4(0.31f, 0.63f, 1.0f, 1), "Triangulo azul (para cima): termino");
+    ImGui::TextColored(ImVec4(1.0f, 0.24f, 0.24f, 1), "X vermelho: prazo perdido");
+    ImGui::TextColored(ImVec4(1.0f, 0.62f, 0.11f, 1), "Losango laranja: sorteio (desempate)");
+    ImGui::TextWrapped("O texto \"CPU n\" dentro da celula indica em qual processador a tarefa executou.");
 
     ImGui::End();
 }
