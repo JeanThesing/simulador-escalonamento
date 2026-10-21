@@ -434,12 +434,57 @@ void Simulador::definirAlgoritmo(const std::string &algoritmo)
 
 void Simulador::definirQuantidadeCPUs(int quantidade)
 {
-    if (quantidade >= 1 && quantidade <= 8)
+    if (quantidade >= 1 && quantidade <= static_cast<int>(max<size_t>(1, tarefasIniciais.size())))
         qtde_cpus = quantidade;
 }
 
 void Simulador::definirQuantum(int novoQuantum)
 {
-    if (novoQuantum >= 1 && novoQuantum <= 10)
+    if (novoQuantum >= 1 && novoQuantum <= 1000)
         quantum = novoQuantum;
+}
+
+
+// Edita o estado corrente e substitui a fotografia atual do histórico, para que
+// um retrocesso/avanço restaure também a alteração manual feita pelo usuário.
+bool Simulador::editarTarefa(int id, EstadoTarefa novoEstado, int novoTempoRestante, string &erro)
+{
+    auto it = find_if(tarefas.begin(), tarefas.end(), [id](const Tarefa &t) { return t.getId() == id; });
+    if (it == tarefas.end()) { erro = "A tarefa selecionada não existe."; return false; }
+    if (novoTempoRestante < 0 || novoTempoRestante > it->getDuracao()) {
+        erro = "O tempo restante deve estar entre 0 e a duração original da tarefa."; return false;
+    }
+    if (novoEstado == EstadoTarefa::AGUARDANDO && novoTempoRestante != 0) {
+        erro = "Uma tarefa aguardando a próxima ativação precisa ter tempo restante igual a zero."; return false;
+    }
+    if (novoEstado == EstadoTarefa::TERMINADA) novoTempoRestante = 0;
+    if ((novoEstado == EstadoTarefa::PRONTA || novoEstado == EstadoTarefa::EXECUTANDO || novoEstado == EstadoTarefa::SUSPENSA) && novoTempoRestante == 0) {
+        erro = "Uma tarefa pronta ou executando precisa ter tempo restante maior que zero."; return false;
+    }
+
+    // Libera a CPU atual antes de mudar para um estado que não seja EXECUTANDO.
+    if (it->getIdCPU() >= 0 && novoEstado != EstadoTarefa::EXECUTANDO) {
+        for (CPU &cpu : cpus) if (cpu.getId() == it->getIdCPU() && cpu.getTarefaAtual() == &*it) { cpu.liberar(); break; }
+    }
+    if (novoEstado == EstadoTarefa::EXECUTANDO && it->getIdCPU() < 0) {
+        auto cpuLivre = find_if(cpus.begin(), cpus.end(), [](const CPU &cpu) { return cpu.estaLivre() != 0; });
+        if (cpuLivre == cpus.end()) { erro = "Não há CPU livre para colocar esta tarefa em execução."; return false; }
+        it->setEstado(EstadoTarefa::PRONTA);
+        it->setTempoRestante(novoTempoRestante);
+        cpuLivre->atribuirTarefa(&*it);
+    } else {
+        it->setEstado(novoEstado);
+        it->setIdCPU(novoEstado == EstadoTarefa::EXECUTANDO ? it->getIdCPU() : -1);
+        it->setTempoRestante(novoTempoRestante);
+    }
+
+    if (novoEstado == EstadoTarefa::TERMINADA) it->setIdCPU(-1);
+    atualizaFilaDeProntas();
+    if (!historico.empty()) {
+        // Atualiza o estado presente; a linha de Gantt já executada permanece como registro histórico.
+        historico.pop_back();
+        salvaHistoricoTick();
+    }
+    erro.clear();
+    return true;
 }

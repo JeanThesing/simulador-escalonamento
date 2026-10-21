@@ -29,6 +29,8 @@ void desenharGantt(const Simulador &simulador);
 
 // Desenha a tabela com as informações atuais das tarefas.
 void desenharTarefas(const Simulador &simulador);
+// Interface para editar o estado da tarefa selecionada no tick atual.
+void desenharEditorTarefas(Simulador &simulador, std::string &mensagem);
 
 // Desenha a tabela com o estado de cada CPU (ligada/desligada, tarefa atual e tempo desligada).
 void desenharCPUs(const Simulador &simulador);

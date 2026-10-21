@@ -2,7 +2,7 @@
 #include "header/exportadorGantt.hpp"
 
 // Cor da célula em que a tarefa não executou naquele tick (mesma no Gantt e na legenda).
-static const ImU32 COR_SEM_EXECUCAO = IM_COL32(65, 70, 80, 255);
+static const ImU32 COR_SEM_EXECUCAO = IM_COL32(24, 27, 34, 255);
 
 // Retorna a cor que será utilizada para desenhar uma tarefa no gráfico de Gantt.
 // Usa a cor informada no arquivo de configuração (RRGGBB), a mesma da imagem exportada.
@@ -92,6 +92,7 @@ void desenharGantt(const Simulador &simulador)
 {
     // Obtém o histórico de execução, lista de cpus e a lista de tarefas.
     const auto &historico = simulador.getHistoricoGantt();
+    const auto &historicoEstados = simulador.getHistorico();
     const auto &tarefas = simulador.getTarefas();
     const auto &cpus = simulador.getCPUs();
 
@@ -174,17 +175,29 @@ void desenharGantt(const Simulador &simulador)
             // Calcula a posição horizontal da célula.
             float x = inicio.x + larguraRotulo + t * larguraTick;
 
-            // Define a cor conforme a execução da tarefa.
-            ImU32 cor = cpuExecutora >= 0
-                            ? corTarefa(tarefa)
-                            : COR_SEM_EXECUCAO;
+            // Estado no início deste tick, preservado pelo histórico reversível.
+            EstadoTarefa estadoTick = EstadoTarefa::NOVA;
+            if (t < historicoEstados.size())
+            {
+                for (const Tarefa &snapshot : historicoEstados[t].tarefas)
+                    if (snapshot.getId() == tarefa.getId())
+                    {
+                        estadoTick = snapshot.getEstado();
+                        break;
+                    }
+            }
+            const bool suspensa = cpuExecutora < 0 && estadoTick == EstadoTarefa::SUSPENSA;
+            ImU32 cor = cpuExecutora >= 0 ? corTarefa(tarefa) : (suspensa ? IM_COL32(0, 0, 0, 255) : COR_SEM_EXECUCAO);
 
-            // Desenha a célula correspondente ao tick.
-            draw->AddRectFilled(
-                ImVec2(x + 1, y + 1),
-                ImVec2(x + larguraTick - 2, y + alturaLinha - 2),
-                cor,
-                3.0f);
+            // Pronta/inativa fica sem preenchimento; suspensa fica preta e pontilhada.
+            draw->AddRectFilled(ImVec2(x + 1, y + 1), ImVec2(x + larguraTick - 2, y + alturaLinha - 2), cor, 3.0f);
+            draw->AddRect(ImVec2(x + 1, y + 1), ImVec2(x + larguraTick - 2, y + alturaLinha - 2), IM_COL32(70, 75, 85, 255), 3.0f);
+            if (suspensa)
+            {
+                for (float px = x + 5; px < x + larguraTick - 4; px += 8)
+                    for (float py = y + 5; py < y + alturaLinha - 4; py += 8)
+                        draw->AddCircleFilled(ImVec2(px, py), 1.5f, IM_COL32(190, 190, 190, 255));
+            }
 
             // Exibe a CPU responsável quando houve execução.
             if (cpuExecutora >= 0)
@@ -396,13 +409,111 @@ void desenharLegenda(const Simulador &simulador)
 
     itemLegenda(COR_SEM_EXECUCAO, "Sem CPU neste tick (pronta ou inativa)");
     itemLegenda(IM_COL32(40, 40, 45, 255), "CPU desligada (off (N) = N ticks seguidos)");
+    itemLegenda(IM_COL32(0, 0, 0, 255), "Suspensa (preto pontilhado)");
 
     ImGui::Separator();
+
     ImGui::TextColored(ImVec4(0.31f, 0.86f, 0.47f, 1), "Triangulo verde (para baixo): chegada");
     ImGui::TextColored(ImVec4(0.31f, 0.63f, 1.0f, 1), "Triangulo azul (para cima): termino");
     ImGui::TextColored(ImVec4(1.0f, 0.24f, 0.24f, 1), "X vermelho: prazo perdido");
     ImGui::TextColored(ImVec4(1.0f, 0.62f, 0.11f, 1), "Losango laranja: sorteio (desempate)");
+
     ImGui::TextWrapped("O texto \"CPU n\" dentro da celula indica em qual processador a tarefa executou.");
 
+    ImGui::End();
+}
+
+// Editor manual exigido pelos requisitos 1.5.2 e 3.4.
+void desenharEditorTarefas(Simulador &simulador, std::string &mensagem)
+{
+    static int indiceTarefa = 0;
+    static int estadoSelecionado = 1;
+    static int tempoRestante = 1;
+    static int ultimaTarefa = -1;
+    static int ultimoTick = -1;
+    const auto &tarefas = simulador.getTarefas();
+    const char *estados[] = {"Nova", "Pronta", "Executando", "Suspensa", "Aguardando", "Terminada"};
+    if (ultimoTick != simulador.getTickAtual())
+    {
+        ultimaTarefa = -1;
+        ultimoTick = simulador.getTickAtual();
+    }
+
+    ImGui::Begin("Editar tarefa");
+    if (tarefas.empty())
+    {
+        ImGui::TextUnformatted("Nenhuma tarefa carregada.");
+        ImGui::End();
+        return;
+    }
+    if (indiceTarefa < 0 || indiceTarefa >= static_cast<int>(tarefas.size()))
+        indiceTarefa = 0;
+    std::vector<std::string> nomes;
+    std::vector<const char *> opcoes;
+    nomes.reserve(tarefas.size());
+    opcoes.reserve(tarefas.size());
+    for (const auto &t : tarefas)
+        nomes.push_back("Tarefa " + std::to_string(t.getId()));
+    for (const auto &n : nomes)
+        opcoes.push_back(n.c_str());
+    int indiceAnterior = indiceTarefa;
+    ImGui::Combo("Tarefa", &indiceTarefa, opcoes.data(), static_cast<int>(opcoes.size()));
+
+    const Tarefa &t = tarefas[static_cast<size_t>(indiceTarefa)];
+    if (ultimaTarefa != indiceTarefa || indiceAnterior != indiceTarefa)
+    {
+        estadoSelecionado = static_cast<int>(t.getEstado());
+        tempoRestante = t.getTempoRestante();
+        ultimaTarefa = indiceTarefa;
+    }
+    ImGui::Text("ID: %d | Duracao: %d | CPU: %d", t.getId(), t.getDuracao(), t.getIdCPU());
+    ImGui::Combo("Novo estado", &estadoSelecionado, estados, IM_ARRAYSIZE(estados));
+    ImGui::SetNextItemWidth(180.0f);
+    ImGui::InputInt("Tempo restante", &tempoRestante);
+    ImGui::SameLine();
+    if (ImGui::Button("Aplicar alteracao"))
+    {
+        std::string erro;
+        if (simulador.editarTarefa(t.getId(), static_cast<EstadoTarefa>(estadoSelecionado), tempoRestante, erro))
+        {
+            mensagem = "Alteracao aplicada a tarefa " + std::to_string(t.getId()) + ".";
+            ultimaTarefa = -1; // recarrega os valores atuais após aplicar a edição
+        }
+        else
+        {
+            mensagem = "Nao foi possivel alterar a tarefa: " + erro;
+        }
+    }
+    ImGui::TextWrapped("A alteracao afeta o estado atual e e registrada no historico para retrocesso.");
+    ImGui::End();
+}
+
+void desenharCPUs(const Simulador &simulador)
+{
+    ImGui::Begin("CPUs");
+    if (ImGui::BeginTable("TabelaCPUs", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable))
+    {
+        ImGui::TableSetupColumn("CPU");
+        ImGui::TableSetupColumn("Estado");
+        ImGui::TableSetupColumn("Tarefa");
+        ImGui::TableSetupColumn("Ticks desligada");
+        ImGui::TableHeadersRow();
+        for (const CPU &cpu : simulador.getCPUs())
+        {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", cpu.getId());
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(cpu.getLigado() ? "Ligada" : "Desligada");
+            ImGui::TableNextColumn();
+            if (cpu.getTarefaAtual())
+                ImGui::Text("Tarefa %d", cpu.getTarefaAtual()->getId());
+            else
+                ImGui::TextUnformatted("Nenhuma");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", cpu.getTempoDesligado());
+        }
+        ImGui::EndTable();
+    }
     ImGui::End();
 }
