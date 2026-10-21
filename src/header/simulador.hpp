@@ -42,7 +42,11 @@ public:
     void criaCPUS();
     void criaEscalonador();
     void criaTarefas();
-    void definirTarefas(const std::vector<Tarefa> &t) { tarefasIniciais = t; }
+    void definirTarefas(const std::vector<Tarefa>& tarefas);
+
+    void definirAlgoritmo(const std::string& algoritmo);
+    void definirQuantidadeCPUs(int quantidade);
+    void definirQuantum(int quantum);
 
     void avancaTick();
     void retrocedeTick();         // funcionara com base no historico do sistema (a ser implementado)

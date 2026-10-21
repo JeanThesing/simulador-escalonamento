@@ -51,62 +51,46 @@ const char *nomeEstado(EstadoTarefa estado)
 // Cada linha representa uma CPU e cada coluna representa um tick.
 void desenharGantt(const Simulador &simulador)
 {
-    // Obtém referências aos dados do simulador.
-    // O uso de const auto& evita copiar os vetores e impede alterações nesses dados.
+    // Obtém o histórico de execução e a lista de tarefas.
     const auto &historico = simulador.getHistoricoGantt();
-    const auto &cpus = simulador.getCPUs();
+    const auto &tarefas = simulador.getTarefas();
 
-    // Begin() abre uma janela do ImGui com o título informado.
-    // Tudo o que for desenhado até ImGui::End() pertence a essa janela.
+    // Cria a janela do gráfico.
     ImGui::Begin("Grafico de Gantt");
 
-    // Text() exibe texto simples dentro da janela.
+    // Exibe o tick atual da simulação.
     ImGui::Text("Tick atual: %d", simulador.getTickAtual());
-
-    // Separator() desenha uma linha horizontal para separar visualmente os elementos.
     ImGui::Separator();
 
-    // BeginChild() cria uma área interna à janela.
-    // Ela pode ter sua própria barra de rolagem, útil quando o gráfico fica muito largo.
+    // Cria uma área com rolagem horizontal.
     ImGui::BeginChild(
-        "Gantt",                             // Identificador da área interna.
-        ImVec2(0, 0),                        // Largura e altura; zero utiliza o espaço disponível.
-        ImGuiChildFlags_None,                // Não aplica opções adicionais de borda.
-        ImGuiWindowFlags_HorizontalScrollbar // Permite rolagem horizontal.
-    );
+        "Gantt",
+        ImVec2(0, 0),
+        ImGuiChildFlags_None,
+        ImGuiWindowFlags_HorizontalScrollbar);
 
-    // ImDrawList permite desenhar formas e textos manualmente.
-    // É o que usamos para construir as células do gráfico de Gantt.
+    // Obtém as ferramentas de desenho e a posição inicial.
     ImDrawList *draw = ImGui::GetWindowDrawList();
-
-    // GetCursorScreenPos() retorna a posição, na tela, onde começa a área de conteúdo.
-    // Essa posição será a referência para desenhar todos os elementos do gráfico.
     ImVec2 inicio = ImGui::GetCursorScreenPos();
 
-    // Define as dimensões de cada parte do gráfico, em pixels.
-    const float larguraRotulo = 60.0f; // Espaço reservado aos nomes das CPUs.
-    const float larguraTick = 52.0f;   // Largura de cada coluna do gráfico.
-    const float alturaLinha = 36.0f;   // Altura de cada linha de CPU.
+    // Define as dimensões dos elementos do gráfico.
+    const float larguraRotulo = 70.0f;
+    const float larguraTick = 90.0f;
+    const float alturaLinha = 36.0f;
 
-    // Calcula o espaço total necessário para desenhar o gráfico.
+    // Calcula o espaço necessário para o gráfico.
     float largura = larguraRotulo + historico.size() * larguraTick;
-    float altura = 30.0f + cpus.size() * alturaLinha;
+    float altura = 30.0f + tarefas.size() * alturaLinha;
 
-    // Dummy() reserva espaço dentro da área do ImGui.
-    // Como desenhamos usando ImDrawList, o ImGui precisa saber quanto espaço ocupar.
+    // Reserva espaço para permitir a exibição e rolagem do gráfico.
     ImGui::Dummy(ImVec2(largura, altura));
 
-    // Desenha o cabeçalho com a numeração dos ticks.
+    // Desenha o cabeçalho com os números dos ticks.
     for (size_t t = 0; t < historico.size(); ++t)
     {
         char texto[16];
+        std::snprintf(texto, sizeof(texto), "%zu", t);
 
-        // Formata o número do tick como texto.
-        // %zu é o especificador de formato utilizado para size_t.
-        std::snprintf(texto, sizeof(texto), "%zu", t + 1);
-
-        // AddText() desenha texto diretamente na posição indicada.
-        // A posição é calculada a partir do início do gráfico e da coluna atual.
         draw->AddText(
             ImVec2(
                 inicio.x + larguraRotulo + t * larguraTick + 8,
@@ -115,66 +99,67 @@ void desenharGantt(const Simulador &simulador)
             texto);
     }
 
-    // Percorre todas as CPUs para desenhar uma linha para cada uma.
-    for (size_t c = 0; c < cpus.size(); ++c)
+    // Desenha uma linha para cada tarefa.
+    for (size_t i = 0; i < tarefas.size(); ++i)
     {
-        // Calcula a posição vertical da linha da CPU atual.
-        float y = inicio.y + 30 + c * alturaLinha;
+        const Tarefa &tarefa = tarefas[i];
+        float y = inicio.y + 30 + i * alturaLinha;
 
-        char nome[24];
-
-        // Cria o rótulo da CPU, como "CPU 0" ou "CPU 1".
-        std::snprintf(nome, sizeof(nome), "CPU %d", cpus[c].getId());
+        // Exibe o identificador da tarefa.
+        char nomeTarefa[24];
+        std::snprintf(nomeTarefa, sizeof(nomeTarefa), "T%d", tarefa.getId());
 
         draw->AddText(
             ImVec2(inicio.x, y + 8),
             IM_COL32(230, 230, 230, 255),
-            nome);
+            nomeTarefa);
 
-        // Percorre o histórico para desenhar uma célula para cada tick.
+        // Verifica em qual CPU a tarefa executou em cada tick.
         for (size_t t = 0; t < historico.size(); ++t)
         {
-            // Verifica se existe uma informação para esta CPU neste tick.
-            if (c >= historico[t].size())
-                continue;
+            // -1 indica que a tarefa não executou nesse tick.
+            int cpuExecutora = -1;
 
-            // Obtém o ID da tarefa executada pela CPU neste tick.
-            // O valor -1 significa que a CPU estava ociosa.
-            int id = historico[t][c];
+            // Procura a tarefa entre as CPUs do tick atual.
+            for (size_t c = 0; c < historico[t].size(); ++c)
+            {
+                if (historico[t][c] == tarefa.getId())
+                {
+                    cpuExecutora = static_cast<int>(c);
+                    break;
+                }
+            }
 
             // Calcula a posição horizontal da célula.
             float x = inicio.x + larguraRotulo + t * larguraTick;
 
-            // AddRectFilled() desenha um retângulo preenchido.
-            // As duas posições definem seus cantos superior esquerdo e inferior direito.
+            // Define a cor conforme a execução da tarefa.
+            ImU32 cor = cpuExecutora >= 0
+                            ? corTarefa(tarefa.getId())
+                            : IM_COL32(65, 70, 80, 255);
+
+            // Desenha a célula correspondente ao tick.
             draw->AddRectFilled(
                 ImVec2(x + 1, y + 1),
                 ImVec2(x + larguraTick - 2, y + alturaLinha - 2),
-                corTarefa(id),
-                3.0f // Raio dos cantos arredondados.
-            );
+                cor,
+                3.0f);
 
-            // Quando existe uma tarefa, escreve seu ID dentro da célula.
-            if (id >= 0)
+            // Exibe a CPU responsável quando houve execução.
+            if (cpuExecutora >= 0)
             {
-                char nomeTarefa[16];
-
-                std::snprintf(
-                    nomeTarefa,
-                    sizeof(nomeTarefa),
-                    "T%d",
-                    id);
+                char nomeCPU[16];
+                std::snprintf(nomeCPU, sizeof(nomeCPU), "CPU %d", cpuExecutora);
 
                 draw->AddText(
                     ImVec2(x + 8, y + 9),
                     IM_COL32(255, 255, 255, 255),
-                    nomeTarefa);
+                    nomeCPU);
             }
         }
     }
 
-    // Encerra a área interna e, em seguida, a janela do gráfico.
-    // Todo Begin() deve ter seu End() correspondente.
+    // Finaliza a área interna e a janela do gráfico.
     ImGui::EndChild();
     ImGui::End();
 }

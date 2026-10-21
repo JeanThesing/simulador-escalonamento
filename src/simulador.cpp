@@ -302,21 +302,25 @@ void Simulador::salvarTickGantt()
 
 void Simulador::reiniciar()
 {
-    // Limpa os registros e os dados da execução anterior.
+    // Limpa os dados da execução anterior.
     historico.clear();
     historicoGantt.clear();
     filaDeProntas.clear();
+
+    // Restaura as tarefas ao estado inicial.
+    tarefas = tarefasIniciais;
+
+    // Reinicia os componentes do sistema.
     cpus.clear();
-    tarefas.clear();
     eventos.clear();
     escalonador.reset();
     relogio = Relogio();
 
-    // Recria os componentes e registra o novo estado inicial.
+    // Recria as CPUs e o escalonador com os parâmetros atuais.
     criaCPUS();
-    criaTarefas();
     criaEscalonador();
-    // Ativa as tarefas que chegam no instante inicial.
+
+    // Ativa as tarefas que chegam no tick inicial.
     for (Tarefa &tarefa : tarefas)
     {
         if (tarefa.deveExecutar(0))
@@ -325,6 +329,8 @@ void Simulador::reiniciar()
             eventos.push_back({0, tarefa.getId(), TipoEvento::CHEGADA}); // registra a chegada no instante inicial
         }
     }
+
+    // Atualiza a fila e registra o estado inicial.
     atualizaFilaDeProntas();
     salvaHistoricoTick();
 }
@@ -357,4 +363,27 @@ bool Simulador::executarCompleto(int limiteTicks)
         ticksExecutados++;
     }
     return true;
+}
+
+void Simulador::definirTarefas(const std::vector<Tarefa> &tarefas)
+{
+    tarefasIniciais = tarefas;
+    this->tarefas = tarefasIniciais;
+}
+
+void Simulador::definirAlgoritmo(const std::string &algoritmo)
+{
+    algoritmo_escalonamento = algoritmo;
+}
+
+void Simulador::definirQuantidadeCPUs(int quantidade)
+{
+    if (quantidade >= 1 && quantidade <= 8)
+        qtde_cpus = quantidade;
+}
+
+void Simulador::definirQuantum(int novoQuantum)
+{
+    if (novoQuantum >= 1 && novoQuantum <= 10)
+        quantum = novoQuantum;
 }

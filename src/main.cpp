@@ -21,6 +21,10 @@ int main(int argc, char *argv[])
     if (!testeLeitor(caminho, config))
         return 1;
 
+    int algoritmo = (config.algoritmo == "EDF") ? 1 : 0;
+    int quantidadeCPUs = config.qtdeCpus;
+    int quantum = config.quantum;
+
     srand(67); // gera msm sequencia de num aleaotiros
 
     // Cria a janela da aplicação com largura 1200 e altura 750 pixels.
@@ -34,7 +38,7 @@ int main(int argc, char *argv[])
     rlImGuiSetup(true);
 
     // Cria o simulador com os valores lidos do arquivo de configuração.
-    Simulador simulador(config.qtdeCpus, config.quantum, config.algoritmo);
+    Simulador simulador(quantidadeCPUs, quantum, algoritmo == 0 ? "RM" : "EDF");
 
     /* ============
     Inicializa os componentes internos da simulação.
@@ -108,6 +112,47 @@ int main(int argc, char *argv[])
         }
         if (!mensagem.empty())
             ImGui::TextWrapped("%s", mensagem.c_str());
+
+        ImGui::Separator();
+
+        bool configuracaoAlterada = false;
+
+        // Seleciona o algoritmo de escalonamento.
+        const char* algoritmos[] = {"RM", "EDF"};
+
+        ImGui::SetNextItemWidth(100);
+
+        if (ImGui::Combo("Algoritmo", &algoritmo, algoritmos, 2))
+            configuracaoAlterada = true;
+
+        ImGui::SameLine();
+
+        // Define a quantidade de CPUs.
+        ImGui::SetNextItemWidth(100);
+
+        if (ImGui::SliderInt("CPUs", &quantidadeCPUs, 1, 8))
+            configuracaoAlterada = true;
+
+        ImGui::SameLine();
+
+        // Define o quantum.
+        // ImGui::SetNextItemWidth(120);
+
+        // if (ImGui::SliderInt("Quantum", &quantum, 1, 10))
+        //     configuracaoAlterada = true;
+
+        // Aplica as alterações e reinicia a simulação.
+        if (configuracaoAlterada)
+        {
+            simulador.definirAlgoritmo(
+                algoritmo == 0 ? "RM" : "EDF"
+            );
+
+            simulador.definirQuantidadeCPUs(quantidadeCPUs);
+            simulador.definirQuantum(quantum);
+
+            simulador.reiniciar();
+        }
 
         // Encerra a janela de controles.
         ImGui::End();
