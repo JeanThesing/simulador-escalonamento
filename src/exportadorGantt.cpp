@@ -55,6 +55,16 @@ namespace
               << (0.299 * r + 0.587 * g + 0.114 * b > 150 ? "#000" : "#FFF") << "\">" << rotulo << "</text>\n";
     }
 
+    // Desenha um losango laranja para indicar sorteio.
+    void desenharSorteio(std::ostream &o, int x, int y)
+    {
+        o << "<polygon points=\"" << x << ',' << y - 7 << ' '
+          << x + 7 << ',' << y << ' '
+          << x << ',' << y + 7 << ' '
+          << x - 7 << ',' << y
+          << "\" fill=\"#FF9F1C\" stroke=\"#222\" stroke-width=\"1.5\"/>\n";
+    }
+
     // Pronta (esperando CPU): sem cor (requisito 2.1), so contorno tracejado.
     void desenharPronta(std::ostream &o, int x, int y, int w, int h)
     {
@@ -200,6 +210,8 @@ bool exportarGanttSVG(const Simulador &simulador, const std::string &caminho, st
          { desenharTriangulo(itens, x + AMOSTRA / 2, y - 6, false, COR_TERMINO); });
     item("Prazo perdido (deadline)", [&](int x, int y)
          { desenharPrazoPerdido(itens, x + AMOSTRA / 2, y); });
+    item("Sorteio (desempate)", [&](int x, int y)
+         { desenharSorteio(itens, x + AMOSTRA / 2, y); });
 
     const int alturaLegenda = 34 + (linhaLeg + 1) * LINHA_LEGENDA + 26;
     const int altura = yLegenda + alturaLegenda + 16;
@@ -264,7 +276,9 @@ bool exportarGanttSVG(const Simulador &simulador, const std::string &caminho, st
             desenharTriangulo(o, x, y + ALTURA_LINHA - 3, true, COR_CHEGADA);
         else if (ev.tipo == TipoEvento::TERMINO)
             desenharTriangulo(o, x, y + 3, false, COR_TERMINO);
-        else
+        else if (ev.tipo == TipoEvento::SORTEIO)
+            desenharSorteio(o, x, y + ALTURA_LINHA / 2);
+        else if (ev.tipo == TipoEvento::PRAZO_PERDIDO)
             desenharPrazoPerdido(o, x, y + ALTURA_LINHA / 2);
     }
 

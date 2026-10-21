@@ -7,7 +7,8 @@ enum class TipoEvento
 {
     CHEGADA,
     TERMINO,
-    PRAZO_PERDIDO
+    PRAZO_PERDIDO,
+    SORTEIO
 }; // eventos a serem mostrados no Gantt
 
 // evento relevante para o Gantt (chegada, termino, prazo perdido) no instante do tick
