@@ -487,33 +487,3 @@ void desenharEditorTarefas(Simulador &simulador, std::string &mensagem)
     ImGui::TextWrapped("A alteracao afeta o estado atual e e registrada no historico para retrocesso.");
     ImGui::End();
 }
-
-void desenharCPUs(const Simulador &simulador)
-{
-    ImGui::Begin("CPUs");
-    if (ImGui::BeginTable("TabelaCPUs", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable))
-    {
-        ImGui::TableSetupColumn("CPU");
-        ImGui::TableSetupColumn("Estado");
-        ImGui::TableSetupColumn("Tarefa");
-        ImGui::TableSetupColumn("Ticks desligada");
-        ImGui::TableHeadersRow();
-        for (const CPU &cpu : simulador.getCPUs())
-        {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("%d", cpu.getId());
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted(cpu.getLigado() ? "Ligada" : "Desligada");
-            ImGui::TableNextColumn();
-            if (cpu.getTarefaAtual())
-                ImGui::Text("Tarefa %d", cpu.getTarefaAtual()->getId());
-            else
-                ImGui::TextUnformatted("Nenhuma");
-            ImGui::TableNextColumn();
-            ImGui::Text("%d", cpu.getTempoDesligado());
-        }
-        ImGui::EndTable();
-    }
-    ImGui::End();
-}
