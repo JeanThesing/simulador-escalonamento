@@ -80,37 +80,52 @@ void Simulador::avancaTick()
     // Executa as tarefas durante um tick
     executarSimulacao();
 
-    // O termino acontece no fim do tick (instante tickAtual + 1).
+    // Registra términos ocorridos ao final do tick.
     for (size_t i = 0; i < tarefas.size(); i++)
-        if (tarefas[i].getExecucoes() > execAntes[i]) // se a quantidade de execucoes aumentou, a tarefa terminou uma execucao
-            eventos.push_back({tickAtual + 1, tarefas[i].getId(), TipoEvento::TERMINO});
+    {
+        if (tarefas[i].getExecucoes() > execAntes[i])
+        {
+            eventos.push_back({tickAtual + 1,
+                               tarefas[i].getId(),
+                               TipoEvento::TERMINO});
+        }
+    }
 
-    // Avança o relógio
+    // Avança o relógio.
     relogio.incrementa();
 
-    // Salva o estado após a execução e o avanço do relógio
+    // Salva o estado final do tick.
     salvaHistoricoTick();
 }
 
 void Simulador::retrocedeTick()
 {
-    // O primeiro registro representa o estado inicial e não pode ser removido.
+    // Não permite voltar antes do estado inicial.
     if (historico.size() <= 1)
         return;
 
-    // Remove o estado atual e a última linha do gráfico de Gantt.
+    // Remove o estado atual.
     historico.pop_back();
+
+    // Cada tick executado deve corresponder a uma linha do Gantt.
     if (!historicoGantt.empty())
         historicoGantt.pop_back();
 
-    // Recupera o estado anterior e restaura o relógio e as tarefas.
     const EstadoSistema &estado = historico.back();
+
+    // Restaura tarefas e relógio.
     tarefas = estado.tarefas;
-    cpus.clear();
     relogio.setTick(estado.tick);
 
-    // Reconstrói as CPUs a partir dos dados salvos, pois os ponteiros
-    // das tarefas precisam apontar para os objetos atuais do vetor tarefas.
+    // Restaura os demais dados do sistema.
+    filaDeProntas = estado.filaDeProntas;
+    eventos = estado.eventos;
+    quantum = estado.quantum;
+
+    // Reconstrói as CPUs usando os IDs das tarefas salvos.
+    cpus.clear();
+    cpus.reserve(estado.cpus.size());
+
     for (const EstadoCPU &salva : estado.cpus)
     {
         cpus.emplace_back(salva.id);
@@ -138,8 +153,8 @@ void Simulador::retrocedeTick()
         }
     }
 
-    // A reconstrução das CPUs pode alterar estados das tarefas.
-    // Por isso, restaura os estados e IDs de CPU exatamente como foram salvos.
+    // Atribuir uma tarefa à CPU pode modificar seus dados.
+    // Restaura os estados e IDs de CPU salvos no histórico.
     for (const Tarefa &salva : estado.tarefas)
     {
         for (Tarefa &atual : tarefas)
@@ -152,12 +167,6 @@ void Simulador::retrocedeTick()
             }
         }
     }
-
-    // Recupera os demais dados da configuração naquele instante.
-    filaDeProntas = estado.filaDeProntas;
-    eventos = estado.eventos; // descarta os eventos dos ticks desfeitos
-    quantum = estado.quantum;
-    /*marcadores de chegada, termino e prazo perdido somem do Gantt quando o usuário volta o tick*/
 }
 
 void Simulador::executarSimulacao()
@@ -177,8 +186,9 @@ void Simulador::executarSimulacao()
 
     for (CPU &cpu : cpus)
     {
+        // CPUs desligadas permanecem desligadas.
         if (!cpu.getLigado())
-            cpu.ligar();
+            continue;
 
         vector<Tarefa *> candidatas;
 
@@ -186,12 +196,16 @@ void Simulador::executarSimulacao()
         for (Tarefa &tarefa : tarefas)
         {
             bool nestaCPU = cpu.getTarefaAtual() == &tarefa;
+
             bool emOutraCPU =
-                tarefa.getEstado() == EstadoTarefa::EXECUTANDO && !nestaCPU;
+                tarefa.getEstado() == EstadoTarefa::EXECUTANDO &&
+                !nestaCPU;
 
             // Verifica se outra CPU já recebeu esta tarefa durante o escalonamento.
             bool jaAtribuida =
-                find(tarefasAtribuidas.begin(), tarefasAtribuidas.end(), &tarefa) != tarefasAtribuidas.end();
+                find(tarefasAtribuidas.begin(),
+                     tarefasAtribuidas.end(),
+                     &tarefa) != tarefasAtribuidas.end();
 
             // Tarefas em execução em outra CPU ou já atribuídas são descartadas.
             if (emOutraCPU || jaAtribuida)
@@ -221,18 +235,18 @@ void Simulador::executarSimulacao()
             tarefasAtribuidas.push_back(cpu.getTarefaAtual());
     }
 
-    // Atualiza a fila de prontas após as decisões do escalonador.
-    atualizaFilaDeProntas();
-
-    // Registra quais tarefas serão executadas em cada CPU neste tick.
+    // Registra o estado das CPUs antes de executar o tick.
     salvarTickGantt();
 
     // Avança a execução das tarefas atribuídas às CPUs.
     for (CPU &cpu : cpus)
-        cpu.executarTick();
+    {
+        if (cpu.getLigado())
+            cpu.executarTick();
+    }
 
-    // Salva o estado resultante para permitir o retrocesso da simulação.
-    // salvaHistoricoTick();
+    // O histórico deve refletir o estado posterior à execução.
+    atualizaFilaDeProntas();
 }
 
 void Simulador::salvaHistoricoTick()

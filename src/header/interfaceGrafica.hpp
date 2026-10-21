@@ -14,8 +14,8 @@
 #include <cstdio>
 
 // Retorna a cor utilizada para representar uma tarefa no gráfico de Gantt.
-// O ID -1 representa uma CPU ociosa.
-ImU32 corTarefa(int id);
+// É a cor definida para a tarefa no arquivo de configuração (campo "cor").
+ImU32 corTarefa(const Tarefa &tarefa);
 
 // Converte o estado de uma tarefa para um texto exibido na interface.
 const char *nomeEstado(EstadoTarefa estado);
@@ -25,3 +25,6 @@ void desenharGantt(const Simulador &simulador);
 
 // Desenha a tabela com as informações atuais das tarefas.
 void desenharTarefas(const Simulador &simulador);
+
+// Desenha a legenda dos elementos mostrados no gráfico de Gantt da janela.
+void desenharLegenda(const Simulador &simulador);

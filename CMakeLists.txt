@@ -1,4 +1,3 @@
-
 # para rodar o build do cmake
 # cmake -S . -B build -G Ninja
 # cmake --build build
@@ -39,6 +38,7 @@ set(CORE_SOURCES
     src/simulador.cpp
     src/leitorConfig.cpp
     src/escalonador.cpp
+    src/exportadorGantt.cpp
 )
 
 # =========================

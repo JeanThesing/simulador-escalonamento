@@ -1,10 +1,28 @@
 #include "header/simulador.hpp"
 #include "header/leitorConfig.hpp"
 #include "header/interfaceGrafica.hpp"
+#include "header/exportadorGantt.hpp"
+#include <filesystem>
 #include <time.h>
 using namespace std;
 
 bool testeLeitor(const string &caminho, Configuracao &config);
+
+// Gera o Gantt da simulacao em SVG (requisito 2.4) e devolve a mensagem para mostrar ao usuario.
+// O arquivo e salvo na pasta de onde o programa foi executado; a mensagem mostra o caminho completo
+// para o usuario saber onde encontrar a imagem.
+static string exportarGantt(const Simulador &simulador, const string &prefixo)
+{
+    const string arquivo = "gantt.svg";
+    string erro;
+
+    if (!exportarGanttSVG(simulador, arquivo, erro))
+        return prefixo + "Nao foi possivel salvar a imagem: " + erro;
+
+    error_code ec; // sem excecao: se nao der para obter o caminho absoluto, mostra so o nome
+    filesystem::path completo = filesystem::absolute(arquivo, ec);
+    return prefixo + "Imagem salva em: " + (ec ? arquivo : completo.string());
+}
 
 int main(int argc, char *argv[])
 {
@@ -100,16 +118,18 @@ int main(int argc, char *argv[])
             }
             else
             {
-                // TODO: gerar a imagem do Gantt completo (requisito 2.4)
-                // bool gerou = exportarGantt(simulador, "gantt.svg");
-                // if (gerou)
-                //     mensagem = "Simulacao concluida. Imagem salva em: gantt.svg";
-                // else
-                //     mensagem = "Simulacao concluida, mas nao foi possivel salvar a imagem";
-
-                mensagem = "Simulacao concluida no tick " + to_string(simulador.getTickAtual()); // provisorio, ate a exportacao existir
+                // A simulacao terminou: gera automaticamente a imagem do Gantt completo (requisito 2.4)
+                mensagem = exportarGantt(simulador,
+                                         "Simulacao concluida no tick " + to_string(simulador.getTickAtual()) + ". ");
             }
         }
+
+        ImGui::SameLine();
+
+        // Permite gerar a imagem a qualquer momento (ex.: depois de um passo a passo), com o que ja foi simulado
+        if (ImGui::Button("Exportar Gantt"))
+            mensagem = exportarGantt(simulador, "");
+
         if (!mensagem.empty())
             ImGui::TextWrapped("%s", mensagem.c_str());
 
@@ -160,6 +180,7 @@ int main(int argc, char *argv[])
         // Desenha o gráfico e a tabela com os dados atualizados do simulador.
         desenharGantt(simulador);
         desenharTarefas(simulador);
+        desenharLegenda(simulador);
 
         // Finaliza o desenho dos componentes ImGui.
         rlImGuiEnd();
