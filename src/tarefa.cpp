@@ -13,6 +13,7 @@ Tarefa::Tarefa(int id,
     this->id = id;
     this->cor = cor;
     this->ingresso = ingresso;
+    this->proximaAtivacao = ingresso; // a primeira liberacao acontece no instante de ingresso
     this->duracao = duracao;
     this->tempoRestante = duracao;
     this->periodo = periodo;
@@ -29,46 +30,54 @@ void Tarefa::executarTick()
     if (estado != EstadoTarefa::EXECUTANDO || tempoRestante <= 0)
         return; // se a tarefa não estiver em execução ou já tiver terminado, não faz nada
 
-    tempoRestante--;
+    tempoRestante--; //diminui o tempo restante da tarefa a cada tick
 
+    // se o tempo restante for 0, a tarefa terminou a execução e deve ser marcada como AGUARDANDO ou TERMINADA (se completou todas as 10)
     if (tempoRestante == 0)
     {
         execucoes++;
-        idCPU = -1;
+        idCPU = -1; // a tarefa terminou de executar, entao nao esta mais em nenhuma cpu
 
         if (execucoes >= LIMITE_EXECUCOES)
             estado = EstadoTarefa::TERMINADA; // tarefa atingiu o limite de execucoes (10)
         else
-            estado = EstadoTarefa::AGUARDANDO; // provisorio (tarefa terminou a execucao, mas ainda nao atingiu o limite de execucoes, entao vai aguardar o proximo tick de ativacao)
+            estado = EstadoTarefa::AGUARDANDO; //(tarefa terminou a execucao, mas ainda nao atingiu o limite de execucoes, entao vai aguardar o proximo tick de ativacao)
     }
 }
 
+// define se tarefa deve ser ativada no tick
+// chama no avancaTick() do simulador, uma vez por tick para cada taref
 bool Tarefa::deveExecutar(int tick) const
 {
     // casos em que a tarefa não deve executar:
-    if (periodo <= 0)  // aperiódica (0) ou erro (<0): o aviso é dado na leitura do arquivo
+    if (periodo <= 0) // aperiódica (0) ou erro (<0): o aviso é dado na leitura do arquivo
     {
         return false;
     }
 
-    if (execucoes >= LIMITE_EXECUCOES)
+    if (execucoes >= LIMITE_EXECUCOES) // execucoes >= 10: a tarefa ja terminou (periodica)
         return false;
 
-    if (tick < ingresso) // Impede que a tarefa seja ativada antes do instante de ingresso.
-        return false;
-
+    // a instancia anterior ainda esta viva
+    // a tarefa so tem uma instancia por vez se ainda esta pronta, executando ou suspensa
+    // a proxima ativacao tem que esperar.
+    // deve aguradar quando a instancia anterior perdeu o prazo: ela continua ate terminar (requisito 3.3) e so depois a proxima entra.
     if (estado == EstadoTarefa::EXECUTANDO ||
         estado == EstadoTarefa::PRONTA ||
         estado == EstadoTarefa::SUSPENSA)
-        return false; // Evita que a tarefa seja ativada novamente enquanto já estiver em execução, pronta ou suspensa.
+        return false; // a instancia anterior ainda nao terminou (mesmo que tenha perdido o prazo): a proxima espera
 
-    return (tick - ingresso) % periodo == 0; // verifica se o tick atual corresponde a um instante de ativação periódica. (modulo pra saber se o tick é multiplo do periodo, pra saber se deve ativar ou nao)
+    // verifica se chegou a hora da prox ativacao
+    // >= para permitir ativações atrasadas caso a tarefa anterior ainda estivesse executando
+    // se a instancia anterior atrasou, a proxima e ativada assim que ela terminar (modulo so permitia no instante de multiplos do periodo)
+    return tick >= proximaAtivacao;
 }
 
 void Tarefa::ativar(int tick)
 {
     tempoRestante = duracao;
     prazoAbsoluto = tick + prazo; // prazo da tarefa de acordo com o prazo base e o tick atual (deadline absoluto)
+    proximaAtivacao += periodo; // Define o instante da próxima ativação da tarefa.
     perdeuPrazo = false;
     idCPU = -1;
 
@@ -113,6 +122,8 @@ int Tarefa::getExecucoes() const { return execucoes; }
 int Tarefa::getAtivacoes() const { return ativacoes; }
 
 bool Tarefa::getPerdeuPrazo() const { return perdeuPrazo; }
+
+int Tarefa::getProximaAtivacao() const { return proximaAtivacao; }
 
 // setters de estado de execucao
 void Tarefa::setEstado(EstadoTarefa estado) { this->estado = estado; }

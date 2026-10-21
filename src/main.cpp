@@ -43,6 +43,7 @@ int main(int argc, char *argv[])
     simulador.reiniciar();
     //==============================
 
+    string mensagem = ""; // resultado da ultima execucao completa, mostrado ao usuario
     // O loop principal mantém a janela aberta até que o usuário a feche.
     while (!WindowShouldClose())
     {
@@ -62,18 +63,51 @@ int main(int argc, char *argv[])
 
         // Button() retorna true somente no quadro em que o botão é clicado.
         if (ImGui::Button("Voltar tick"))
+        {
             simulador.retrocedeTick();
+            mensagem = ""; // apaga o resultado da execucao completa anterior
+        }
 
         // SameLine() coloca o próximo componente na mesma linha do anterior.
         ImGui::SameLine();
 
         if (ImGui::Button("Proximo tick"))
+        {
             simulador.avancaTick();
+            mensagem = "";
+        }
 
         ImGui::SameLine();
 
         if (ImGui::Button("Resetar"))
+        {
             simulador.reiniciar();
+            mensagem = "";
+        }
+        
+        ImGui::SameLine();
+
+        if (ImGui::Button("Executar tudo"))
+        {
+            if (!simulador.executarCompleto())
+            {
+                // Falha: a simulacao nao terminou dentro do limite de ticks
+                mensagem = "Limite de ticks atingido";
+            }
+            else
+            {
+                // TODO: gerar a imagem do Gantt completo (requisito 2.4)
+                // bool gerou = exportarGantt(simulador, "gantt.svg");
+                // if (gerou)
+                //     mensagem = "Simulacao concluida. Imagem salva em: gantt.svg";
+                // else
+                //     mensagem = "Simulacao concluida, mas nao foi possivel salvar a imagem";
+
+                mensagem = "Simulacao concluida no tick " + to_string(simulador.getTickAtual()); // provisorio, ate a exportacao existir
+            }
+        }
+        if (!mensagem.empty())
+            ImGui::TextWrapped("%s", mensagem.c_str());
 
         // Encerra a janela de controles.
         ImGui::End();

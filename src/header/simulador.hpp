@@ -14,7 +14,7 @@
 
 /*No entanto, com objetivo de terminar a simulação, assume-se que uma
 tarefa periódica termina após ela ter executado 10 vezes.*/
-//somente tarefas periodicas
+// somente tarefas periodicas
 
 // NUM DE PROCESSADORES NA SIMULACAO DEVEM SER ENTRE (valores entre 1 e N)
 class Simulador
@@ -27,13 +27,14 @@ private:
     std::string algoritmo_escalonamento = "";
     // algoritmo de escalonamento a ser usado
     Relogio relogio = Relogio();
-    std::vector<Tarefa> tarefas;                       // todas as tarefas
-    std::vector<CPU> cpus;                             // todas as cpus
+    std::vector<Tarefa> tarefas;                         // todas as tarefas
+    std::vector<CPU> cpus;                               // todas as cpus
     std::vector<int> filaDeProntas = std::vector<int>(); // fila com o ids das tarefas prontas (vector para poder ordenar as tarefas de acordo com o algoritmo de escalonamento)
     std::vector<std::vector<int>> historicoGantt;
     void salvarTickGantt();
     std::vector<Tarefa> tarefasIniciais; // tarefas lidas do arquivo de configuracao
-    
+    std::vector<EventoGantt> eventos;    // eventos a serem mostrados no Gantt (chegada, termino, prazo perdido) no instante do tick
+
 public:
     Simulador(int qtde_cpus, int quantum, std::string algoritmo_escalonamento);
     ~Simulador();
@@ -44,13 +45,13 @@ public:
     void definirTarefas(const std::vector<Tarefa> &t) { tarefasIniciais = t; }
 
     void avancaTick();
-    void retrocedeTick(); // funcionara com base no historico do sistema (a ser implementado)
+    void retrocedeTick();         // funcionara com base no historico do sistema (a ser implementado)
     void atualizaFilaDeProntas(); // atualiza a fila de tarefas prontas de acordo com o algoritmo de escalonamento
     void executarSimulacao();
     void salvaHistoricoTick();
-    
+
     int getTickAtual() const;
-    const std::vector<std::vector<int>>& getHistoricoGantt() const; 
+    const std::vector<std::vector<int>> &getHistoricoGantt() const;
     // O histórico terá esta estrutura: historicoGantt[tick][idCPU] = id da tarefa executada
     // por exemplo:
     // {
@@ -59,9 +60,15 @@ public:
     //     {  1,  2}  // Tick 2: CPU 0 executou tarefa 1; CPU 1 executou tarefa 2
     // }
 
-    const std::vector<CPU>& getCPUs() const;
-    const std::vector<Tarefa>& getTarefas() const;
+    const std::vector<CPU> &getCPUs() const;
+    const std::vector<Tarefa> &getTarefas() const;
+    const std::vector<EventoGantt> &getEventos() const { return eventos; }
+
     void reiniciar();
+
+    // executar sozinho tudo
+    bool todasTerminadas() const;                   // true se nenhuma tarefa tem mais ativacoes a fazer
+    bool executarCompleto(int limiteTicks = 10000); // roda ate o fim; false se estourou o limite
 };
 
 // fila de prontos

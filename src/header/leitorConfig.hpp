@@ -8,7 +8,7 @@
 struct Configuracao
 {
     std::string algoritmo = "RM"; // RM ou EDF q e sempre em maiusculo apos a leitura
-    int quantum = 1;
+    int quantum = 1; // EMBORA O QUANTUM NAO SEJA USADO NESSE PROJETO A
     int qtdeCpus = 1;
     std::vector<Tarefa> tarefas;     // somente tarefas periodicas validas
     std::vector<std::string> avisos; // nao impedem a simulacao (tarefas aperiodicas ignoradas)

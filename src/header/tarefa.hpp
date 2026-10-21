@@ -4,12 +4,12 @@
 
 enum class EstadoTarefa
 {
-    NOVA,
-    PRONTA,
-    EXECUTANDO,
+    NOVA, //ainda n foi ativada nenhuma vez
+    PRONTA, //esta na fila de prontas esperando cpu
+    EXECUTANDO, //esta executando
     SUSPENSA,
     AGUARDANDO, //(tarefa terminou a execucao, mas ainda nao atingiu o limite de execucoes, entao vai aguardar o proximo tick de ativacao)
-    TERMINADA
+    TERMINADA //completou as 10 execucoes
 };
 
 class Tarefa
@@ -38,6 +38,7 @@ private:
     int prazoAbsoluto = -1; // prazo absoluto da tarefa, calculado a partir do tick de ingresso + prazo relativo
     int execucoes = 0;      // a tarefa finaliza quando executa 10 vezes (por ser periodica)
     int ativacoes = 0;      // quantidade de vezes que a tarefa foi ativada (para ser usada no gantt)
+    int proximaAtivacao = 0; // instante (tick) em que a proxima instancia da tarefa deve ser liberada
     /*bool deveExecutar = false; // indica se a tarefa deve executar ou nao, para ser usado no gantt
     bool terminouExecucao = false; // indica se a tarefa terminou a execucao ou nao*/
     bool perdeuPrazo = false; // indica se a tarefa perdeu o prazo ou nao, para ser usado no gantt
@@ -76,6 +77,7 @@ public:
     int getExecucoes() const;
     int getAtivacoes() const;
     bool getPerdeuPrazo() const;
+    int getProximaAtivacao() const;
 
     // --- Setters: somente o que realmente muda de fora ---
     // estado

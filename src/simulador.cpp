@@ -52,20 +52,43 @@ void Simulador::avancaTick()
 {
     int tickAtual = relogio.getTick();
 
+    // Prazo perdido: so adiciona a marcacao. a tarefa nao é interrompida e continua executando
+    for (Tarefa &tarefa : tarefas)
+    {
+        bool jaPerdeu = tarefa.getPerdeuPrazo();
+        tarefa.verificarPrazo(tickAtual);
+        if (!jaPerdeu && tarefa.getPerdeuPrazo())
+            eventos.push_back({tickAtual, tarefa.getId(), TipoEvento::PRAZO_PERDIDO});
+    }
+
     // Ativa as tarefas que chegam neste instante.
     for (Tarefa &tarefa : tarefas)
     {
         if (tarefa.deveExecutar(tickAtual))
+        {
             tarefa.ativar(tickAtual);
+            eventos.push_back({tickAtual, tarefa.getId(), TipoEvento::CHEGADA});
+        }
     }
 
-    // Executa as tarefas durante um tick.
+    // Guarda as execucoes concluidas antes do tick, para detectar quem terminou
+    vector<int> execAntes;
+    for (const Tarefa &tarefa : tarefas)
+        execAntes.push_back(tarefa.getExecucoes());
+    // ex: para nao contar uma tarefa que ja tinha terminado
+
+    // Executa as tarefas durante um tick
     executarSimulacao();
 
-    // Avança o relógio.
+    // O termino acontece no fim do tick (instante tickAtual + 1).
+    for (size_t i = 0; i < tarefas.size(); i++)
+        if (tarefas[i].getExecucoes() > execAntes[i]) // se a quantidade de execucoes aumentou, a tarefa terminou uma execucao
+            eventos.push_back({tickAtual + 1, tarefas[i].getId(), TipoEvento::TERMINO});
+
+    // Avança o relógio
     relogio.incrementa();
 
-    // Salva o estado após a execução e o avanço do relógio.
+    // Salva o estado após a execução e o avanço do relógio
     salvaHistoricoTick();
 }
 
@@ -132,7 +155,9 @@ void Simulador::retrocedeTick()
 
     // Recupera os demais dados da configuração naquele instante.
     filaDeProntas = estado.filaDeProntas;
+    eventos = estado.eventos; // descarta os eventos dos ticks desfeitos
     quantum = estado.quantum;
+    /*marcadores de chegada, termino e prazo perdido somem do Gantt quando o usuário volta o tick*/
 }
 
 void Simulador::executarSimulacao()
@@ -207,7 +232,7 @@ void Simulador::executarSimulacao()
         cpu.executarTick();
 
     // Salva o estado resultante para permitir o retrocesso da simulação.
-    //salvaHistoricoTick();
+    // salvaHistoricoTick();
 }
 
 void Simulador::salvaHistoricoTick()
@@ -218,6 +243,7 @@ void Simulador::salvaHistoricoTick()
     estado.tarefas = tarefas;
     estado.quantum = quantum;
     estado.filaDeProntas = filaDeProntas;
+    estado.eventos = eventos; // eventos ocorridos ate este tick
 
     // Salva os dados de cada CPU sem armazenar ponteiros para tarefas.
     // O ID da tarefa permite reconstruir a atribuição durante o retrocesso.
@@ -282,6 +308,7 @@ void Simulador::reiniciar()
     filaDeProntas.clear();
     cpus.clear();
     tarefas.clear();
+    eventos.clear();
     escalonador.reset();
     relogio = Relogio();
 
@@ -293,8 +320,41 @@ void Simulador::reiniciar()
     for (Tarefa &tarefa : tarefas)
     {
         if (tarefa.deveExecutar(0))
+        {
             tarefa.ativar(0);
+            eventos.push_back({0, tarefa.getId(), TipoEvento::CHEGADA}); // registra a chegada no instante inicial
+        }
     }
     atualizaFilaDeProntas();
     salvaHistoricoTick();
+}
+
+// executar tudo sozinho
+
+bool Simulador::todasTerminadas() const
+{
+    // A simulacao acaba quando toda tarefa periodica ja cumpriu suas 10 execucoes.
+    for (const Tarefa &tarefa : tarefas)
+        if (tarefa.getEstado() != EstadoTarefa::TERMINADA)
+            return false;
+
+    return true;
+}
+
+bool Simulador::executarCompleto(int limiteTicks)
+{
+    // O limite conta os ticks desta chamada (nao o tick absoluto), assim funciona
+    // tambem quando o usuario ja avancou alguns ticks no passo-a-passo.
+    int ticksExecutados = 0;
+
+    while (!todasTerminadas())
+    {
+        // limite para evitar loop infinito em caso de bug
+        if (ticksExecutados >= limiteTicks)
+            return false;
+
+        avancaTick(); // avanca tick até terminar td
+        ticksExecutados++;
+    }
+    return true;
 }

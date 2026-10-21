@@ -3,14 +3,30 @@
 #include <vector>
 #include "tarefa.hpp"
 
-//fotografia do estado do simulador em determinado tick
+enum class TipoEvento
+{
+    CHEGADA,
+    TERMINO,
+    PRAZO_PERDIDO
+}; // eventos a serem mostrados no Gantt
 
-struct EstadoCPU { // salva dados da CPU sem precisar se preocupar com ponteiros
+// evento relevante para o Gantt (chegada, termino, prazo perdido) no instante do tick
+struct EventoGantt
+{
+    int tick;
+    int idTarefa;
+    TipoEvento tipo;
+};
+
+// fotografia do estado do simulador em determinado tick
+
+struct EstadoCPU
+{ // salva dados da CPU sem precisar se preocupar com ponteiros
     int id;
     int idTarefaAtual = -1; // id da tarefa atual que esta executando na CPU, -1 se nao tiver tarefa
 
-    bool ligado;
-    bool emUso;
+    bool ligado = true;
+    bool emUso = false;
 
     int tempoDesligado = 0;
 };
@@ -25,18 +41,14 @@ cpuSalva.emUso = true;
 cpuSalva.tempoDesligado = 0;
 */
 
-struct EstadoSistema //salva o estado do sistema em determinado tick, para permitir retroceder o tempo da simulacao
+struct EstadoSistema // salva o estado do sistema em determinado tick, para permitir retroceder o tempo da simulacao
 {
     int tick = 0;
 
     std::vector<Tarefa> tarefas;
     std::vector<EstadoCPU> cpus;
-
+    std::vector<EventoGantt> eventos; // eventos ate este tick (restaurados ao retroceder)
     std::vector<int> filaDeProntas;
 
     int quantum = 0;
 };
-
-void salvar(const EstadoSistema& snapshot);
-const EstadoSistema* buscar(int tick);
-void limpar();
