@@ -7,7 +7,7 @@
 class Escalonador
 {
 private:
-    bool sorteou = false;
+    bool sorteou = false; //flag que indica se houve sorteio na ultima chamada de selecionar()
 
 protected:
     // mecanismo de prioridade:

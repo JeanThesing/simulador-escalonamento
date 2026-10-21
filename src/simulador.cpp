@@ -21,7 +21,6 @@ void Simulador::criaEscalonador()
 void Simulador::criaCPUS()
 {
     cpus.clear();
-
     // Cria a quantidade de CPUs definida na configuração, atribuindo um ID a cada uma.
     for (int i = 0; i < qtde_cpus; i++)
         cpus.emplace_back(i);

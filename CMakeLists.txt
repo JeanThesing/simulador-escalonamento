@@ -10,7 +10,7 @@
 # excluir pasta build
 #Remove-Item -Recurse -Force build
 
-# ./build/testeGrafico.exe
+# ./build/simulador.exe
 
 cmake_minimum_required(VERSION 3.20)
 
@@ -56,8 +56,8 @@ target_include_directories(main PRIVATE
 # Interface gráfica
 # =========================
 
-add_executable(testeGrafico
-    src/testeGrafico.cpp
+add_executable(simulador
+    src/interfaceGrafica.cpp
     src/simulador.cpp
     src/tarefa.cpp
     src/cpu.cpp
@@ -70,18 +70,18 @@ add_executable(testeGrafico
     external/rlImGui/rlImGui.cpp
 )
 
-target_include_directories(testeGrafico PRIVATE
+target_include_directories(simulador PRIVATE
     src/header
     external/imgui
     external/rlImGui
 )
 
-target_link_libraries(testeGrafico PRIVATE
+target_link_libraries(simulador PRIVATE
     raylib
 )
 
 if(MINGW)
-    target_link_options(testeGrafico PRIVATE
+    target_link_options(simulador PRIVATE
         -static
         -static-libgcc
         -static-libstdc++
