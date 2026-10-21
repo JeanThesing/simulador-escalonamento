@@ -33,7 +33,7 @@ private:
     std::vector<std::vector<int>> historicoGantt;
     void salvarTickGantt();
     std::vector<Tarefa> tarefasIniciais; // tarefas lidas do arquivo de configuracao
-    
+
 public:
     Simulador(int qtde_cpus, int quantum, std::string algoritmo_escalonamento);
     ~Simulador();
@@ -41,7 +41,11 @@ public:
     void criaCPUS();
     void criaEscalonador();
     void criaTarefas();
-    void definirTarefas(const std::vector<Tarefa> &t) { tarefasIniciais = t; }
+    void definirTarefas(const std::vector<Tarefa>& tarefas);
+
+    void definirAlgoritmo(const std::string& algoritmo);
+    void definirQuantidadeCPUs(int quantidade);
+    void definirQuantum(int quantum);
 
     void avancaTick();
     void retrocedeTick(); // funcionara com base no historico do sistema (a ser implementado)
