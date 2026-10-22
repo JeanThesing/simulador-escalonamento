@@ -239,6 +239,31 @@ void Simulador::escalonarCPUs()
             cpu.desligar();
 }
 
+// Verifica se a cor esta no formato hexadecimal.
+static bool normalizarCor(const string &cor, string &novaCor)
+{
+    novaCor = cor;
+
+    // Remove o # caso exista.
+    if (!novaCor.empty() && novaCor[0] == '#')
+        novaCor.erase(0, 1);
+
+    // A cor deve ter 6 caracteres.
+    if (novaCor.size() != 6)
+        return false;
+
+    // Verifica se todos os caracteres sao hexadecimais.
+    for (char c : novaCor)
+    {
+        if (!((c >= '0' && c <= '9') ||
+              (c >= 'A' && c <= 'F') ||
+              (c >= 'a' && c <= 'f')))
+            return false;
+    }
+
+    return true;
+}
+
 /*
 ========================================================================
 ======================EXECUCAO DA SIMULACAO========================================
@@ -434,7 +459,8 @@ void Simulador::definirAlgoritmo(const std::string &algoritmo)
 
 void Simulador::definirQuantidadeCPUs(int quantidade)
 {
-    if (quantidade >= 1 && quantidade <= static_cast<int>(max<size_t>(1, tarefasIniciais.size())))
+    // Permite configurar a quantidade de CPUs independentemente do numero de tarefas.
+    if (quantidade >= 1)
         qtde_cpus = quantidade;
 }
 
@@ -444,47 +470,185 @@ void Simulador::definirQuantum(int novoQuantum)
         quantum = novoQuantum;
 }
 
-
-// Edita o estado corrente e substitui a fotografia atual do histórico, para que
 // um retrocesso/avanço restaure também a alteração manual feita pelo usuário.
-bool Simulador::editarTarefa(int id, EstadoTarefa novoEstado, int novoTempoRestante, string &erro)
+// Edita a tarefa e salva as alteracoes no historico.
+bool Simulador::editarTarefa(int id, const EdicaoTarefa &edicao, string &erro)
 {
-    auto it = find_if(tarefas.begin(), tarefas.end(), [id](const Tarefa &t) { return t.getId() == id; });
-    if (it == tarefas.end()) { erro = "A tarefa selecionada não existe."; return false; }
-    if (novoTempoRestante < 0 || novoTempoRestante > it->getDuracao()) {
-        erro = "O tempo restante deve estar entre 0 e a duração original da tarefa."; return false;
-    }
-    if (novoEstado == EstadoTarefa::AGUARDANDO && novoTempoRestante != 0) {
-        erro = "Uma tarefa aguardando a próxima ativação precisa ter tempo restante igual a zero."; return false;
-    }
-    if (novoEstado == EstadoTarefa::TERMINADA) novoTempoRestante = 0;
-    if ((novoEstado == EstadoTarefa::PRONTA || novoEstado == EstadoTarefa::EXECUTANDO || novoEstado == EstadoTarefa::SUSPENSA) && novoTempoRestante == 0) {
-        erro = "Uma tarefa pronta ou executando precisa ter tempo restante maior que zero."; return false;
+    auto it = find_if(tarefas.begin(), tarefas.end(), [id](const Tarefa &t)
+                      { return t.getId() == id; });
+    if (it == tarefas.end())
+    {
+        erro = "A tarefa selecionada não existe.";
+        return false;
     }
 
-    // Libera a CPU atual antes de mudar para um estado que não seja EXECUTANDO.
-    if (it->getIdCPU() >= 0 && novoEstado != EstadoTarefa::EXECUTANDO) {
-        for (CPU &cpu : cpus) if (cpu.getId() == it->getIdCPU() && cpu.getTarefaAtual() == &*it) { cpu.liberar(); break; }
+    EstadoTarefa novoEstado = edicao.estado;
+    int novoTempoRestante = edicao.tempoRestante;
+
+    // Verifica os valores informados.
+    string novaCor;
+    if (!normalizarCor(edicao.cor, novaCor))
+    {
+        erro = "A cor deve ter 6 digitos hexadecimais (RRGGBB).";
+        return false;
     }
-    if (novoEstado == EstadoTarefa::EXECUTANDO && it->getIdCPU() < 0) {
-        auto cpuLivre = find_if(cpus.begin(), cpus.end(), [](const CPU &cpu) { return cpu.estaLivre() != 0; });
-        if (cpuLivre == cpus.end()) { erro = "Não há CPU livre para colocar esta tarefa em execução."; return false; }
+    if (edicao.ingresso < 0)
+    {
+        erro = "O ingresso nao pode ser negativo.";
+        return false;
+    }
+    if (edicao.duracao <= 0)
+    {
+        erro = "A duracao deve ser maior que zero.";
+        return false;
+    }
+    if (edicao.periodo <= 0)
+    {
+        erro = "O periodo deve ser maior que zero.";
+        return false;
+    }
+    if (edicao.prazo <= 0)
+    {
+        erro = "O prazo deve ser maior que zero.";
+        return false;
+    }
+
+    // O ingresso so pode mudar antes da primeira ativacao.
+    if (edicao.ingresso != it->getIngresso())
+    {
+        if (it->getAtivacoes() > 0)
+        {
+            erro = "Nao e possivel alterar o ingresso depois da primeira ativacao.";
+            return false;
+        }
+        if (edicao.ingresso < relogio.getTick())
+        {
+            erro = "O novo ingresso nao pode ser anterior ao tick atual.";
+            return false;
+        }
+    }
+
+    // Se o usuário mudou a duração mas não mexeu no tempo restante, acompanha a nova duração
+    if (edicao.tempoRestante == it->getTempoRestante() && edicao.duracao > 0 && edicao.duracao != it->getDuracao())
+    {
+        if (it->getEstado() == EstadoTarefa::NOVA)
+            novoTempoRestante = edicao.duracao;
+        else
+            novoTempoRestante = min(novoTempoRestante, edicao.duracao);
+    }
+
+    // -----------------
+
+    if (novoTempoRestante < 0 || novoTempoRestante > edicao.duracao)
+    {
+        erro = "O tempo restante deve estar entre 0 e a duracao da tarefa.";
+        return false;
+    }
+    if (novoEstado == EstadoTarefa::AGUARDANDO && novoTempoRestante != 0)
+    {
+        erro = "Uma tarefa aguardando precisa ter tempo restante igual a zero.";
+        return false;
+    }
+    if (novoEstado == EstadoTarefa::TERMINADA)
+        novoTempoRestante = 0;
+    if ((novoEstado == EstadoTarefa::PRONTA || novoEstado == EstadoTarefa::EXECUTANDO ||
+         novoEstado == EstadoTarefa::SUSPENSA) &&
+        novoTempoRestante == 0)
+    {
+        erro = "Uma tarefa pronta, executando ou suspensa precisa ter tempo restante maior que zero.";
+        return false;
+    }
+
+    // Verifica se existe CPU livre antes de colocar a tarefa em execucao.
+    if (novoEstado == EstadoTarefa::EXECUTANDO && it->getIdCPU() < 0)
+    {
+        auto cpuLivre = find_if(cpus.begin(), cpus.end(), [](const CPU &cpu)
+                                { return cpu.estaLivre() != 0; });
+        if (cpuLivre == cpus.end())
+        {
+            erro = "Nao ha CPU livre para colocar esta tarefa em execucao.";
+            return false;
+        }
+    }
+
+    // Libera a CPU caso a tarefa deixe de executar.
+    if (it->getIdCPU() >= 0 && novoEstado != EstadoTarefa::EXECUTANDO)
+    {
+        for (CPU &cpu : cpus)
+            if (cpu.getId() == it->getIdCPU() && cpu.getTarefaAtual() == &*it)
+            {
+                cpu.liberar();
+                break;
+            }
+    }
+
+    // Aplica o novo estado.
+    if (novoEstado == EstadoTarefa::EXECUTANDO && it->getIdCPU() < 0)
+    {
+        auto cpuLivre = find_if(cpus.begin(), cpus.end(), [](const CPU &cpu)
+                                { return cpu.estaLivre() != 0; });
         it->setEstado(EstadoTarefa::PRONTA);
         it->setTempoRestante(novoTempoRestante);
         cpuLivre->atribuirTarefa(&*it);
-    } else {
+    }
+    else
+    {
         it->setEstado(novoEstado);
         it->setIdCPU(novoEstado == EstadoTarefa::EXECUTANDO ? it->getIdCPU() : -1);
         it->setTempoRestante(novoTempoRestante);
     }
 
-    if (novoEstado == EstadoTarefa::TERMINADA) it->setIdCPU(-1);
+    if (novoEstado == EstadoTarefa::TERMINADA)
+        it->setIdCPU(-1);
+
+    // Atualiza o prazo e a proxima ativacao.
+    if (edicao.prazo != it->getPrazo() && it->getPrazoAbsoluto() >= 0)
+        it->setPrazoAbsoluto(it->getPrazoAbsoluto() - it->getPrazo() + edicao.prazo);
+
+    if (edicao.periodo != it->getPeriodo() && it->getAtivacoes() > 0)
+        it->setProximaAtivacao(it->getProximaAtivacao() + edicao.periodo - it->getPeriodo());
+
+    if (edicao.ingresso != it->getIngresso())
+    {
+        it->setIngresso(edicao.ingresso);
+        it->setProximaAtivacao(edicao.ingresso);
+    }
+
+    // Atualiza as caracteristicas da tarefa.
+    it->setCor(novaCor);
+    it->setDuracao(edicao.duracao);
+    it->setPeriodo(edicao.periodo);
+    it->setPrazo(edicao.prazo);
+
+    // Atualiza a copia inicial para manter as mudancas ao resetar.
+    for (Tarefa &inicial : tarefasIniciais)
+    {
+        if (inicial.getId() != id)
+            continue;
+
+        if (edicao.ingresso != inicial.getIngresso())
+        {
+            inicial.setIngresso(edicao.ingresso);
+            inicial.setProximaAtivacao(edicao.ingresso);
+        }
+
+        inicial.setCor(novaCor);
+        inicial.setDuracao(edicao.duracao);
+        inicial.setTempoRestante(edicao.duracao);
+        inicial.setPeriodo(edicao.periodo);
+        inicial.setPrazo(edicao.prazo);
+        break;
+    }
+
     atualizaFilaDeProntas();
-    if (!historico.empty()) {
-        // Atualiza o estado presente; a linha de Gantt já executada permanece como registro histórico.
+
+    if (!historico.empty())
+    {
+        // Salva o estado atual sem alterar o Gantt ja executado.
         historico.pop_back();
         salvaHistoricoTick();
     }
+
     erro.clear();
     return true;
 }

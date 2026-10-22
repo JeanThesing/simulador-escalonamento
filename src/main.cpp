@@ -48,8 +48,10 @@ int main(int argc, char *argv[])
             rlImGuiBegin();
             ImGui::Begin("Nao foi possivel carregar a configuracao");
             ImGui::TextWrapped("Verifique o caminho do arquivo e corrija os problemas abaixo:");
-            for (const string &erro : config.erros) ImGui::BulletText("%s", erro.c_str());
-            for (const string &aviso : config.avisos) ImGui::BulletText("Aviso: %s", aviso.c_str());
+            for (const string &erro : config.erros)
+                ImGui::BulletText("%s", erro.c_str());
+            for (const string &aviso : config.avisos)
+                ImGui::BulletText("Aviso: %s", aviso.c_str());
             ImGui::TextWrapped("Feche esta janela e execute novamente com um arquivo valido.");
             ImGui::End();
             rlImGuiEnd();
@@ -87,8 +89,10 @@ int main(int argc, char *argv[])
     //==============================
 
     string mensagem = ""; // resultado da ultima execucao completa, mostrado ao usuario
-    for (const string &aviso : config.avisos) {
-        if (!mensagem.empty()) mensagem += "\n";
+    for (const string &aviso : config.avisos)
+    {
+        if (!mensagem.empty())
+            mensagem += "\n";
         mensagem += "Aviso: " + aviso;
     }
     // O loop principal mantém a janela aberta até que o usuário a feche.
@@ -172,11 +176,13 @@ int main(int argc, char *argv[])
 
         ImGui::SameLine();
 
-        // Define a quantidade de CPUs (limitada ao número de tarefas configuradas).
+        // Define a quantidade maxima de CPUs conforme o arquivo de configuracao.
         ImGui::SetNextItemWidth(100);
-        int maxCPUs = static_cast<int>(config.tarefas.size());
-        if (maxCPUs < 1) maxCPUs = 1;
-        if (quantidadeCPUs > maxCPUs) quantidadeCPUs = maxCPUs;
+
+        int maxCPUs = config.qtdeCpus;
+
+        if (maxCPUs < 1)
+            maxCPUs = 1;
 
         if (ImGui::SliderInt("CPUs", &quantidadeCPUs, 1, maxCPUs))
             configuracaoAlterada = true;

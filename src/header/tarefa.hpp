@@ -4,12 +4,12 @@
 
 enum class EstadoTarefa
 {
-    NOVA, //ainda n foi ativada nenhuma vez
-    PRONTA, //esta na fila de prontas esperando cpu
-    EXECUTANDO, //esta executando
+    NOVA,       // ainda n foi ativada nenhuma vez
+    PRONTA,     // esta na fila de prontas esperando cpu
+    EXECUTANDO, // esta executando
     SUSPENSA,
     AGUARDANDO, //(tarefa terminou a execucao, mas ainda nao atingiu o limite de execucoes, entao vai aguardar o proximo tick de ativacao)
-    TERMINADA //completou as 10 execucoes
+    TERMINADA   // completou as 10 execucoes
 };
 
 class Tarefa
@@ -35,9 +35,9 @@ private:
      tempo de execução da tarefa for igual ou maior que a duração da tarefa.*/
     /*lista_eventos indica uma lista de eventos que ocorre durante a execução
     da tarefa.*/
-    int prazoAbsoluto = -1; // prazo absoluto da tarefa, calculado a partir do tick de ingresso + prazo relativo
-    int execucoes = 0;      // a tarefa finaliza quando executa 10 vezes (por ser periodica)
-    int ativacoes = 0;      // quantidade de vezes que a tarefa foi ativada (para ser usada no gantt)
+    int prazoAbsoluto = -1;  // prazo absoluto da tarefa, calculado a partir do tick de ingresso + prazo relativo
+    int execucoes = 0;       // a tarefa finaliza quando executa 10 vezes (por ser periodica)
+    int ativacoes = 0;       // quantidade de vezes que a tarefa foi ativada (para ser usada no gantt)
     int proximaAtivacao = 0; // instante (tick) em que a proxima instancia da tarefa deve ser liberada
     /*bool deveExecutar = false; // indica se a tarefa deve executar ou nao, para ser usado no gantt
     bool terminouExecucao = false; // indica se a tarefa terminou a execucao ou nao*/
@@ -80,14 +80,37 @@ public:
     int getProximaAtivacao() const;
 
     // --- Setters: somente o que realmente muda de fora ---
+
     // estado
     void setEstado(EstadoTarefa estado);
+
     // idcpu
     void setIdCPU(int idCPU);
+
     // tempo restante
     void setTempoRestante(int tempoRestante);
-};
 
+    // cor
+    void setCor(const std::string &cor);
+
+    // ingresso
+    void setIngresso(int ingresso);
+
+    // duracao
+    void setDuracao(int duracao);
+
+    // periodo
+    void setPeriodo(int periodo);
+
+    // prazo
+    void setPrazo(int prazo);
+
+    // prazo absoluto
+    void setPrazoAbsoluto(int prazoAbsoluto);
+
+    // proxima ativacao
+    void setProximaAtivacao(int proximaAtivacao);
+};
 
 /*
 Tempo de chegada (Arrival Time ai): instante em que o escalonador toma conhecimento de uma nova ativação da tarefa.

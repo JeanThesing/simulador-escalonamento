@@ -429,8 +429,12 @@ void desenharEditorTarefas(Simulador &simulador, std::string &mensagem)
     static int indiceTarefa = 0;
     static int estadoSelecionado = 1;
     static int tempoRestante = 1;
+    static int ingresso = 0, duracao = 1, periodo = 1, prazo = 1;
+    static char corHex[8] = "000000";
     static int ultimaTarefa = -1;
     static int ultimoTick = -1;
+    static std::string resultado; // resultado da última tentativa de aplicar, mostrado no próprio editor
+    static bool resultadoErro = false;
     const auto &tarefas = simulador.getTarefas();
     const char *estados[] = {"Nova", "Pronta", "Executando", "Suspensa", "Aguardando", "Terminada"};
     if (ultimoTick != simulador.getTickAtual())
@@ -439,6 +443,7 @@ void desenharEditorTarefas(Simulador &simulador, std::string &mensagem)
         ultimoTick = simulador.getTickAtual();
     }
 
+    ImGui::SetNextWindowSize(ImVec2(430, 470), ImGuiCond_FirstUseEver);
     ImGui::Begin("Editar tarefa");
     if (tarefas.empty())
     {
@@ -456,38 +461,109 @@ void desenharEditorTarefas(Simulador &simulador, std::string &mensagem)
         nomes.push_back("Tarefa " + std::to_string(t.getId()));
     for (const auto &n : nomes)
         opcoes.push_back(n.c_str());
+
+    // ---------- Tarefa selecionada ----------
+    ImGui::SeparatorText("Tarefa selecionada");
     int indiceAnterior = indiceTarefa;
+    ImGui::SetNextItemWidth(160.0f);
     ImGui::Combo("Tarefa", &indiceTarefa, opcoes.data(), static_cast<int>(opcoes.size()));
 
     const Tarefa &t = tarefas[static_cast<size_t>(indiceTarefa)];
     if (ultimaTarefa != indiceTarefa || indiceAnterior != indiceTarefa)
     {
+        // Carrega os valores atuais da tarefa nos campos do editor.
         estadoSelecionado = static_cast<int>(t.getEstado());
         tempoRestante = t.getTempoRestante();
+        ingresso = t.getIngresso();
+        duracao = t.getDuracao();
+        periodo = t.getPeriodo();
+        prazo = t.getPrazo();
+        std::snprintf(corHex, sizeof(corHex), "%s", t.getCor().c_str());
+        if (indiceAnterior != indiceTarefa)
+            resultado.clear(); // o resultado anterior era de outra tarefa
         ultimaTarefa = indiceTarefa;
     }
-    ImGui::Text("ID: %d | Duracao: %d | CPU: %d", t.getId(), t.getDuracao(), t.getIdCPU());
+    ImGui::Text("ID: %d | CPU: %d | Estado: %s", t.getId(), t.getIdCPU(), nomeEstado(t.getEstado()));
+
+    // ---------- Características temporais ----------
+    ImGui::SeparatorText("Caracteristicas temporais");
+    ImGui::SetNextItemWidth(160.0f);
+    ImGui::InputInt("Ingresso", &ingresso);
+    ImGui::SetNextItemWidth(160.0f);
+    ImGui::InputInt("Duracao", &duracao);
+    ImGui::SetNextItemWidth(160.0f);
+    ImGui::InputInt("Periodo", &periodo);
+    ImGui::SetNextItemWidth(160.0f);
+    ImGui::InputInt("Prazo", &prazo);
+
+
+    // PARA evitar que o usuário digite valores negativos ou menores que 1, para valores q n  fazem sentido
+    if (ingresso < 0)
+        ingresso = 0;
+    if (duracao < 1)
+        duracao = 1;
+    if (periodo < 1)
+        periodo = 1;
+    if (prazo < 1)
+        prazo = 1;
+
+    // ---------- Estado atual ----------
+    ImGui::SeparatorText("Estado atual");
+    ImGui::SetNextItemWidth(160.0f);
     ImGui::Combo("Novo estado", &estadoSelecionado, estados, IM_ARRAYSIZE(estados));
-    ImGui::SetNextItemWidth(180.0f);
+    ImGui::SetNextItemWidth(160.0f);
     ImGui::InputInt("Tempo restante", &tempoRestante);
-    // Mantem o valor dentro do intervalo permitido enquanto o usuario edita,
-    // impedindo que numeros negativos permaneçam no campo.
-    if (tempoRestante < 0) tempoRestante = 0;
-    if (tempoRestante > t.getDuracao()) tempoRestante = t.getDuracao();
-    ImGui::SameLine();
-    if (ImGui::Button("Aplicar alteracao"))
+    // Impede que numeros negativos permaneçam no campo; o limite superior (duração) e as
+    // demais incompatibilidades são validados ao aplicar, com uma justificativa para o usuário.
+    if (tempoRestante < 0)
+        tempoRestante = 0;
+
+    // ---------- Cor da tarefa ----------
+    ImGui::SeparatorText("Cor da tarefa");
+    ImGui::SetNextItemWidth(160.0f);
+    ImGui::InputText("RRGGBB", corHex, sizeof(corHex),
+                     ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase);
+    // Amostra da cor digitada (cinza enquanto o valor for inválido).
+    {
+        int r = 128, g = 128, b = 128;
+        corParaRGB(corHex, r, g, b);
+        ImGui::SameLine();
+        ImGui::ColorButton("##amostraCor", ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f),
+                           ImGuiColorEditFlags_NoTooltip, ImVec2(20, 20));
+    }
+
+    ImGui::Spacing();
+    ImGui::TextWrapped("Alteracoes sao validadas e registradas no historico. "
+                       "Campos incompativeis com o estado atual sao rejeitados com uma justificativa.");
+    ImGui::Spacing();
+
+    if (ImGui::Button("Aplicar alteracoes"))
     {
         std::string erro;
-        if (simulador.editarTarefa(t.getId(), static_cast<EstadoTarefa>(estadoSelecionado), tempoRestante, erro))
+        const int idTarefa = t.getId();
+        EdicaoTarefa edicao{static_cast<EstadoTarefa>(estadoSelecionado), tempoRestante,
+                            ingresso, duracao, periodo, prazo, corHex};
+        if (simulador.editarTarefa(idTarefa, edicao, erro))
         {
-            mensagem = "Alteracao aplicada a tarefa " + std::to_string(t.getId()) + ".";
+            resultado = "Alteracao aplicada a tarefa " + std::to_string(idTarefa) + ".";
+            resultadoErro = false;
             ultimaTarefa = -1; // recarrega os valores atuais após aplicar a edição
         }
         else
         {
-            mensagem = "Nao foi possivel alterar a tarefa: " + erro;
+            resultado = "Nao foi possivel alterar a tarefa: " + erro;
+            resultadoErro = true;
         }
+        mensagem = resultado; // também aparece no painel de controle
     }
-    ImGui::TextWrapped("A alteracao afeta o estado atual e e registrada no historico para retrocesso.");
+
+    // Resultado da última tentativa, junto do botão (verde = aplicada, vermelho = rejeitada).
+    if (!resultado.empty())
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, resultadoErro ? ImVec4(1.0f, 0.35f, 0.35f, 1.0f)
+                                                           : ImVec4(0.35f, 0.85f, 0.45f, 1.0f));
+        ImGui::TextWrapped("%s", resultado.c_str());
+        ImGui::PopStyleColor();
+    }
     ImGui::End();
 }

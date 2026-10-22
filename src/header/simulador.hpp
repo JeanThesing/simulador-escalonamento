@@ -12,6 +12,19 @@
 #include <memory>
 #include "historico.hpp"
 
+// Dados que podem ser alterados no editor de tarefas
+struct EdicaoTarefa
+{
+    EstadoTarefa estado;
+    int tempoRestante;
+    int ingresso;
+    int duracao;
+    int periodo;
+    int prazo;
+    std::string cor;
+};
+
+
 /*No entanto, com objetivo de terminar a simulação, assume-se que uma
 tarefa periódica termina após ela ter executado 10 vezes.*/
 // somente tarefas periodicas
@@ -48,7 +61,7 @@ public:
     void definirQuantidadeCPUs(int quantidade);
     void definirQuantum(int quantum);
     // Permite editar uma tarefa no estado atual; retorna false se a alteração for inválida.
-    bool editarTarefa(int id, EstadoTarefa novoEstado, int tempoRestante, std::string &erro);
+    bool editarTarefa(int id, const EdicaoTarefa &edicao, std::string &erro);
     int getQuantum() const { return quantum; }
 
     void avancaTick();

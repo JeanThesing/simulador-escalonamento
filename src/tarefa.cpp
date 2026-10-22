@@ -127,7 +127,22 @@ int Tarefa::getProximaAtivacao() const { return proximaAtivacao; }
 
 // setters de estado de execucao
 void Tarefa::setEstado(EstadoTarefa estado) { this->estado = estado; }
-
+ 
 void Tarefa::setIdCPU(int idCPU) { this->idCPU = idCPU; }
-
+ 
 void Tarefa::setTempoRestante(int tempoRestante) { this->tempoRestante = tempoRestante; }
+ 
+// Setters das características (usados pelo editor de tarefas; a validação é feita em Simulador::editarTarefa)
+void Tarefa::setCor(const string &cor) { this->cor = cor; }
+ 
+void Tarefa::setIngresso(int ingresso) { this->ingresso = ingresso; }
+ 
+void Tarefa::setDuracao(int duracao) { this->duracao = duracao; }
+ 
+void Tarefa::setPeriodo(int periodo) { this->periodo = periodo; }
+ 
+void Tarefa::setPrazo(int prazo) { this->prazo = prazo; }
+ 
+void Tarefa::setPrazoAbsoluto(int prazoAbsoluto) { this->prazoAbsoluto = prazoAbsoluto; }
+ 
+void Tarefa::setProximaAtivacao(int proximaAtivacao) { this->proximaAtivacao = proximaAtivacao; }
