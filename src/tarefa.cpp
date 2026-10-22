@@ -2,6 +2,8 @@
 #define LIMITE_EXECUCOES 10
 using namespace std;
 
+int Tarefa::limiteExecucoes() { return LIMITE_EXECUCOES; }
+
 // builder
 Tarefa::Tarefa(int id,
                std::string cor,

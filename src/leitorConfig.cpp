@@ -1,4 +1,5 @@
 #include "header/leitorConfig.hpp"
+#include "header/registroEscalonadores.hpp"
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -145,10 +146,17 @@ void lerCabecalho(const std::vector<std::string> &campos,
     {
         std::string algoritmo = converterMaiusculas(campos[0]);
 
-        if (algoritmo == "RM" || algoritmo == "EDF")
+        // Consulta o registro (requisito 4.2): qualquer algoritmo registrado e aceito,
+        // sem precisar alterar o leitor ao incluir um algoritmo novo.
+        if (algoritmoRegistrado(algoritmo))
             config.algoritmo = algoritmo;
         else
-            registrarErro(config, linha, "Algoritmo invalido");
+        {
+            std::string disponiveis;
+            for (const std::string &nome : nomesAlgoritmos())
+                disponiveis += (disponiveis.empty() ? "" : ", ") + nome;
+            registrarErro(config, linha, "Algoritmo invalido (disponiveis: " + disponiveis + ")");
+        }
     }
 
     // Quantum

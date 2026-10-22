@@ -22,6 +22,10 @@ public:
     void incrementaTempoDesligado(int tick); // sera incrementado de acordo com o tick
     void atribuirTarefa(Tarefa *tarefa);     // executa a tarefa, estado para "EXECUTANDO" e ocupa CPU
     void removerTarefa();                    // remove a tarefa atual, estado para "TERMINADA" e libera CPU
+    // Apenas reaponta a CPU para o objeto Tarefa (sem mudar estado/ocupacao). Usado quando o
+    // vector de tarefas do simulador muda de lugar na memoria (tarefa adicionada/removida em
+    // plena simulacao) e os ponteiros guardados pelas CPUs ficariam invalidos.
+    void reapontar(Tarefa *tarefa);
     Tarefa *getTarefaAtual() const;
     int estaLivre() const;
     void executarTick();

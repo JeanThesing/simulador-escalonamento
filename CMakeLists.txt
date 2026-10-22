@@ -38,6 +38,7 @@ set(CORE_SOURCES
     src/simulador.cpp
     src/leitorConfig.cpp
     src/escalonadorPrioridade.cpp
+    src/registroEscalonadores.cpp
     src/exportadorGantt.cpp
 )
 

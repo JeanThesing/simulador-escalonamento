@@ -5,6 +5,7 @@ class EscalonadorPrioridade : public Escalonador
 {
 private:
     bool sorteou = false; //flag que indica se houve sorteio na ultima chamada de selecionar()
+    unsigned long long semente = 0; // semente do sorteio, definida pelo simulador antes de cada selecionar()
 
 protected:
     // mecanismo de prioridade:
@@ -27,4 +28,7 @@ public:
     // true se a ultima chamada de selecionar() precisou de sorteio (criterio 5 de desempate)
     // O simulador consulta dps de selecionar() para marcar o evento no grafico gant
     bool houveSorteio() const override { return sorteou; }
+
+    // Define a semente usada no sorteio (criterio 5), tornando-o reproduzivel (ver Escalonador).
+    void definirSemente(unsigned long long novaSemente) override { semente = novaSemente; }
 };

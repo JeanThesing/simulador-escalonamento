@@ -52,6 +52,9 @@ public:
         int prazo);
     ~Tarefa();
 
+    // Quantidade de execucoes apos a qual uma tarefa periodica termina (assumido no enunciado: 10)
+    static int limiteExecucoes();
+
     // comportamento
     void executarTick();
     bool deveExecutar(int tick) const;

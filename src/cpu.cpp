@@ -59,6 +59,11 @@ void CPU::removerTarefa()
     liberar();
 }
 
+void CPU::reapontar(Tarefa *tarefa)
+{
+    tarefaAtual = tarefa;
+}
+
 Tarefa *CPU::getTarefaAtual() const
 {
     return tarefaAtual;

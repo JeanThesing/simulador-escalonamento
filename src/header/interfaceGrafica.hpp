@@ -36,3 +36,7 @@ void desenharEditorTarefas(Simulador &simulador, std::string &mensagem);
 void desenharCPUs(const Simulador &simulador);
 // Desenha a legenda dos elementos mostrados no gráfico de Gantt da janela.
 void desenharLegenda(const Simulador &simulador);
+
+// Desenha o painel do "debugger" do sistema (requisito 1.5.1): tick, algoritmo, quantum,
+// fila de prontas global, tarefa em cada CPU e contagem de tarefas por estado.
+void desenharEstadoSistema(const Simulador &simulador);

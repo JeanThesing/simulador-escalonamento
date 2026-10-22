@@ -6,6 +6,7 @@
 #include "escalonador.hpp"
 #include "escalonadorRm.hpp"
 #include "escalonadorEdf.hpp"
+#include "registroEscalonadores.hpp"
 #include <queue>
 #include <vector>
 #include <string>
@@ -46,6 +47,13 @@ private:
     std::vector<std::vector<int>> historicoGantt;
     void salvarTickGantt();
     void atualizarHistoricoAtual();
+    // Quando o vector 'tarefas' muda (adicionar/remover/ordenar), os ponteiros Tarefa* guardados
+    // nas CPUs deixam de valer. Estes dois metodos guardam o id da tarefa de cada CPU antes da
+    // mudanca e reapontam as CPUs para os novos objetos depois dela.
+    std::vector<int> idsTarefasNasCPUs() const;
+    void religarCPUs(const std::vector<int> &idsPorCpu);
+    // Substitui o ultimo snapshot do historico pelo estado atual (mudancas manuais no tick atual).
+    void regravarHistoricoAtual();
     std::vector<Tarefa> tarefasIniciais; // tarefas lidas do arquivo de configuracao
     std::vector<EventoGantt> eventos;    // eventos a serem mostrados no Gantt (chegada, termino, prazo perdido) no instante do tick
 
@@ -63,6 +71,15 @@ public:
     void definirQuantum(int quantum);
     // Permite editar uma tarefa no estado atual; retorna false se a alteração for inválida.
     bool editarTarefa(int id, const EdicaoTarefa &edicao, std::string &erro);
+    // Adiciona uma tarefa nova durante (ou antes de) a simulacao; false + 'erro' se for invalida.
+    bool adicionarTarefa(int id, const std::string &cor, int ingresso, int duracao,
+                         int periodo, int prazo, std::string &erro);
+    // Remove uma tarefa que ainda nao foi ativada; false + 'erro' explicando o motivo se nao der.
+    bool removerTarefa(int id, std::string &erro);
+    // Substitui TODA a configuracao (algoritmo, quantum, CPUs e tarefas) e reinicia a simulacao.
+    // Usado ao carregar outro arquivo de configuracao sem fechar o programa.
+    void reconfigurar(int qtdeCpus, int quantum, const std::string &algoritmo,
+                      const std::vector<Tarefa> &tarefas);
     int getQuantum() const { return quantum; }
     int getQuantidadeCPUs() const { return qtde_cpus; }
 
@@ -84,6 +101,8 @@ public:
     //     {  1,  2}  // Tick 2: CPU 0 executou tarefa 1; CPU 1 executou tarefa 2
     // }
 
+    // Ids das tarefas na fila de prontas global (debugger - requisito 1.5.1)
+    const std::vector<int> &getFilaDeProntas() const { return filaDeProntas; }
     const std::vector<CPU> &getCPUs() const;
     const std::vector<Tarefa> &getTarefas() const;
     const std::vector<EventoGantt> &getEventos() const { return eventos; }

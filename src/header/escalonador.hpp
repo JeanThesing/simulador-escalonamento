@@ -19,4 +19,10 @@ public:
 
     // Por padrao nao ha sorteio. Quem sorteia (EscalonadorPrioridade) sobrescreve.
     virtual bool houveSorteio() const { return false; }
+
+    // Semente do proximo sorteio de desempate. O simulador define a semente antes de cada
+    // selecionar() a partir do tick e da posicao (CPU), de modo que o mesmo estado do sistema
+    // sempre produz o mesmo sorteio. Isso garante que avancar depois de retroceder repita
+    // exatamente o que ja tinha sido simulado (requisito 1.5.2). Padrao: ignora (sem sorteio).
+    virtual void definirSemente(unsigned long long /*semente*/) {}
 };

@@ -11,15 +11,13 @@ Simulador::~Simulador() {}
 
 void Simulador::criaEscalonador()
 {
-    // Instancia o escalonador de acordo com o algoritmo escolhido.
-    if (algoritmo_escalonamento == "RM")
-        escalonador = make_unique<EscalonadorRM>();
-    else if (algoritmo_escalonamento == "EDF")
-        escalonador = make_unique<EscalonadorEDF>();
-    else
+    // Instancia o escalonador pelo nome, consultando o registro de algoritmos (requisito 4.2):
+    // o simulador nao conhece RM/EDF diretamente, entao novos algoritmos nao exigem mexer aqui.
+    escalonador = criarEscalonador(algoritmo_escalonamento);
+    if (!escalonador)
     {
-        // Impede o uso de um escalonador anterior.
-        escalonador.reset();
+        // criarEscalonador devolve nullptr se o nome nao esta registrado; o escalonador
+        // anterior ja foi descartado pela atribuicao acima, entao nao e reaproveitado.
         cerr << "Erro: algoritmo de escalonamento desconhecido: "
              << algoritmo_escalonamento << endl;
     }
@@ -197,6 +195,10 @@ void Simulador::escalonarCPUs()
     vector<Tarefa *> escolhidas;
     for (size_t k = 0; k < cpus.size() && !restantes.empty(); k++)
     {
+        // Semente do sorteio de desempate derivada do tick e da posicao k (nao de rand()):
+        // o mesmo estado do sistema sempre sorteia igual, entao avancar depois de retroceder
+        // reproduz exatamente a simulacao anterior.
+        escalonador->definirSemente(static_cast<unsigned long long>(relogio.getTick()) * 1000003ULL + k);
         Tarefa *melhor = escalonador->selecionar(restantes);
         if (!melhor)
             break;
@@ -488,7 +490,8 @@ void Simulador::atualizarHistoricoAtual()
 
 void Simulador::definirAlgoritmo(const std::string &algoritmo)
 {
-    if (algoritmo != "RM" && algoritmo != "EDF")
+    // So aceita algoritmos registrados (RM, EDF e qualquer outro incluido no registro).
+    if (!algoritmoRegistrado(algoritmo))
         return;
     if (algoritmo_escalonamento == algoritmo)
         return;
@@ -713,4 +716,149 @@ bool Simulador::editarTarefa(int id, const EdicaoTarefa &edicao, string &erro)
 
     erro.clear();
     return true;
+}
+
+
+/*
+========================================================================
+============ EDICAO DO CONJUNTO DE TAREFAS EM TEMPO DE EXECUCAO ========
+========================================================================
+*/
+
+vector<int> Simulador::idsTarefasNasCPUs() const
+{
+    vector<int> ids;
+    for (const CPU &cpu : cpus)
+        ids.push_back(cpu.getTarefaAtual() ? cpu.getTarefaAtual()->getId() : -1);
+    return ids;
+}
+
+void Simulador::religarCPUs(const vector<int> &idsPorCpu)
+{
+    // Depois de mexer no vector 'tarefas' os objetos mudaram de endereco: procura cada tarefa
+    // pelo id e reaponta a CPU que a executava.
+    for (size_t i = 0; i < cpus.size() && i < idsPorCpu.size(); i++)
+    {
+        if (idsPorCpu[i] < 0)
+            continue;
+        for (Tarefa &tarefa : tarefas)
+            if (tarefa.getId() == idsPorCpu[i])
+            {
+                cpus[i].reapontar(&tarefa);
+                break;
+            }
+    }
+}
+
+void Simulador::regravarHistoricoAtual()
+{
+    // Mesma tecnica do editarTarefa: troca o ultimo snapshot pelo estado atual, sem alterar o
+    // Gantt ja executado, para que retroceder/avancar preserve a alteracao manual.
+    if (historico.empty())
+        return;
+    historico.pop_back();
+    salvaHistoricoTick();
+}
+
+bool Simulador::adicionarTarefa(int id, const string &cor, int ingresso, int duracao,
+                                int periodo, int prazo, string &erro)
+{
+    // Validacoes: cada uma devolve uma justificativa clara (requisito 3.1/3.4).
+    if (id <= 0)
+    {
+        erro = "O ID deve ser maior que zero.";
+        return false;
+    }
+    for (const Tarefa &t : tarefas)
+        if (t.getId() == id)
+        {
+            erro = "Ja existe uma tarefa com o ID " + to_string(id) + ".";
+            return false;
+        }
+    string novaCor;
+    if (!normalizarCor(cor, novaCor))
+    {
+        erro = "A cor deve ter 6 digitos hexadecimais (RRGGBB).";
+        return false;
+    }
+    if (ingresso < relogio.getTick())
+    {
+        // Uma tarefa nao pode "chegar no passado": o Gantt desses ticks ja foi desenhado.
+        erro = "O ingresso nao pode ser anterior ao tick atual (" + to_string(relogio.getTick()) + ").";
+        return false;
+    }
+    if (duracao <= 0 || periodo <= 0 || prazo <= 0)
+    {
+        erro = "Duracao, periodo e prazo devem ser maiores que zero (somente tarefas periodicas no Projeto A).";
+        return false;
+    }
+
+    const vector<int> idsCpu = idsTarefasNasCPUs();
+
+    // Insere na simulacao atual e na copia inicial (para a tarefa sobreviver a "Resetar").
+    tarefas.emplace_back(id, novaCor, ingresso, duracao, periodo, prazo);
+    tarefasIniciais.emplace_back(id, novaCor, ingresso, duracao, periodo, prazo);
+
+    // Mantem a ordem por ID: o Gantt e a legenda dependem dela.
+    auto porId = [](const Tarefa &a, const Tarefa &b)
+    { return a.getId() < b.getId(); };
+    sort(tarefas.begin(), tarefas.end(), porId);
+    sort(tarefasIniciais.begin(), tarefasIniciais.end(), porId);
+
+    religarCPUs(idsCpu); // o vector foi realocado/reordenado
+    atualizaFilaDeProntas();
+    regravarHistoricoAtual();
+
+    erro.clear();
+    return true;
+}
+
+bool Simulador::removerTarefa(int id, string &erro)
+{
+    auto it = find_if(tarefas.begin(), tarefas.end(), [id](const Tarefa &t)
+                      { return t.getId() == id; });
+    if (it == tarefas.end())
+    {
+        erro = "A tarefa selecionada nao existe.";
+        return false;
+    }
+    if (tarefas.size() == 1)
+    {
+        erro = "O sistema precisa ter pelo menos uma tarefa.";
+        return false;
+    }
+    if (it->getAtivacoes() > 0)
+    {
+        // Ela ja aparece no Gantt/historico; remover deixaria o grafico inconsistente.
+        erro = "A tarefa ja foi ativada e consta no historico da simulacao. "
+               "Retroceda ate antes do ingresso dela ou reinicie para remove-la.";
+        return false;
+    }
+
+    const vector<int> idsCpu = idsTarefasNasCPUs();
+
+    tarefas.erase(it);
+    tarefasIniciais.erase(remove_if(tarefasIniciais.begin(), tarefasIniciais.end(),
+                                    [id](const Tarefa &t)
+                                    { return t.getId() == id; }),
+                          tarefasIniciais.end());
+
+    religarCPUs(idsCpu);
+    atualizaFilaDeProntas();
+    regravarHistoricoAtual();
+
+    erro.clear();
+    return true;
+}
+
+void Simulador::reconfigurar(int novasCpus, int novoQuantum, const string &algoritmo,
+                             const vector<Tarefa> &novasTarefas)
+{
+    // Aplica os parametros novos e recomeca do zero (historico, relogio, CPUs e tarefas).
+    qtde_cpus = novasCpus < 1 ? 1 : novasCpus;
+    quantum = novoQuantum < 1 ? 1 : novoQuantum;
+    if (algoritmoRegistrado(algoritmo))
+        algoritmo_escalonamento = algoritmo;
+    definirTarefas(novasTarefas);
+    reiniciar();
 }

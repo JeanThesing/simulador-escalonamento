@@ -1,5 +1,5 @@
 #include "header/escalonadorPrioridade.hpp"
-#include <cstdlib>
+#include <cstdint>
 
 Tarefa *EscalonadorPrioridade::selecionar(const std::vector<Tarefa *> &prontas)
 {
@@ -31,8 +31,15 @@ Tarefa *EscalonadorPrioridade::selecionar(const std::vector<Tarefa *> &prontas)
         return empatadas[0];
 
     // 5- sorteio entre todas as empatadas (mesma chance para cada uma)
+    // Em vez de rand() (cujo estado global nao e guardado no historico e faria o sorteio mudar
+    // ao avancar depois de retroceder), usa uma funcao de mistura (SplitMix64) aplicada a
+    // semente que o simulador definiu para este tick/CPU: mesmo estado => mesmo sorteio.
     sorteou = true;
-    return empatadas[rand() % empatadas.size()];
+    std::uint64_t z = semente + 0x9E3779B97F4A7C15ULL;
+    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
+    z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
+    z = z ^ (z >> 31);
+    return empatadas[z % empatadas.size()];
 }
 
 // prioridade do algoritmo. se empatar, aplica o desempate

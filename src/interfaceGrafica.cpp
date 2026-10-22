@@ -336,21 +336,28 @@ void desenharTarefas(const Simulador &simulador)
 {
     ImGui::Begin("Tarefas");
 
-    // A tabela apresenta o estado atual e os parâmetros temporais de cada tarefa.
+    // A tabela apresenta o TCB de cada tarefa: configuracao (ingresso, duracao, periodo, prazo)
+    // e estado de execucao (CPU, prazo absoluto, restante, execucoes, ativacoes, prazo perdido).
     if (ImGui::BeginTable(
             "TabelaTarefas",
-            7,
+            12,
             ImGuiTableFlags_Borders |
                 ImGuiTableFlags_RowBg |
-                ImGuiTableFlags_Resizable))
+                ImGuiTableFlags_Resizable |
+                ImGuiTableFlags_ScrollX))
     {
         ImGui::TableSetupColumn("ID");
         ImGui::TableSetupColumn("Estado");
+        ImGui::TableSetupColumn("CPU");
         ImGui::TableSetupColumn("Ingresso");
         ImGui::TableSetupColumn("Duracao");
         ImGui::TableSetupColumn("Periodo");
         ImGui::TableSetupColumn("Prazo");
+        ImGui::TableSetupColumn("Prazo abs.");
         ImGui::TableSetupColumn("Restante");
+        ImGui::TableSetupColumn("Execucoes");
+        ImGui::TableSetupColumn("Ativacoes");
+        ImGui::TableSetupColumn("Perdeu prazo");
 
         ImGui::TableHeadersRow();
 
@@ -365,6 +372,12 @@ void desenharTarefas(const Simulador &simulador)
             ImGui::Text("%s", nomeEstado(tarefa.getEstado()));
 
             ImGui::TableNextColumn();
+            if (tarefa.getIdCPU() >= 0)
+                ImGui::Text("%d", tarefa.getIdCPU());
+            else
+                ImGui::TextUnformatted("-");
+
+            ImGui::TableNextColumn();
             ImGui::Text("%d", tarefa.getIngresso());
 
             ImGui::TableNextColumn();
@@ -376,8 +389,28 @@ void desenharTarefas(const Simulador &simulador)
             ImGui::TableNextColumn();
             ImGui::Text("%d", tarefa.getPrazo());
 
+            // Prazo absoluto = instante da ativacao + prazo; -1 = ainda nao foi ativada.
+            ImGui::TableNextColumn();
+            if (tarefa.getPrazoAbsoluto() >= 0)
+                ImGui::Text("%d", tarefa.getPrazoAbsoluto());
+            else
+                ImGui::TextUnformatted("-");
+
             ImGui::TableNextColumn();
             ImGui::Text("%d", tarefa.getTempoRestante());
+
+            // Execucoes concluidas / limite (a tarefa periodica termina ao completar o limite).
+            ImGui::TableNextColumn();
+            ImGui::Text("%d/%d", tarefa.getExecucoes(), Tarefa::limiteExecucoes());
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", tarefa.getAtivacoes());
+
+            ImGui::TableNextColumn();
+            if (tarefa.getPerdeuPrazo())
+                ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "Sim");
+            else
+                ImGui::TextUnformatted("Nao");
         }
 
         // Encerra a tabela.
@@ -385,6 +418,50 @@ void desenharTarefas(const Simulador &simulador)
     }
 
     // Encerra a janela das tarefas.
+    ImGui::End();
+}
+
+// Painel do sistema: o que um debugger mostraria sobre o estado global (requisito 1.5.1).
+void desenharEstadoSistema(const Simulador &simulador)
+{
+    ImGui::SetNextWindowSize(ImVec2(330, 300), ImGuiCond_FirstUseEver);
+    ImGui::Begin("Estado do sistema");
+
+    ImGui::Text("Tick atual: %d", simulador.getTickAtual());
+    ImGui::Text("Algoritmo: %s | Quantum: %d | CPUs: %d",
+                simulador.getAlgoritmo().c_str(), simulador.getQuantum(), simulador.getQuantidadeCPUs());
+
+    // Fila de prontas GLOBAL (nao e por CPU): tarefas esperando processador.
+    ImGui::SeparatorText("Fila de prontas (global)");
+    const std::vector<int> &fila = simulador.getFilaDeProntas();
+    if (fila.empty())
+        ImGui::TextUnformatted("(vazia)");
+    else
+    {
+        std::string texto;
+        for (int id : fila)
+            texto += (texto.empty() ? "T" : ", T") + std::to_string(id);
+        ImGui::TextWrapped("%s", texto.c_str());
+    }
+
+    // Quem esta em cada processador agora.
+    ImGui::SeparatorText("Processadores");
+    for (const CPU &cpu : simulador.getCPUs())
+    {
+        if (cpu.getTarefaAtual())
+            ImGui::Text("CPU %d: executando tarefa %d", cpu.getId(), cpu.getTarefaAtual()->getId());
+        else
+            ImGui::Text("CPU %d: desligada (%d ticks no total)", cpu.getId(), cpu.getTempoDesligado());
+    }
+
+    // Resumo por estado.
+    ImGui::SeparatorText("Tarefas por estado");
+    int contagem[6] = {0, 0, 0, 0, 0, 0};
+    for (const Tarefa &t : simulador.getTarefas())
+        contagem[static_cast<int>(t.getEstado())]++;
+    for (int e = 0; e < 6; e++)
+        ImGui::Text("%s: %d", nomeEstado(static_cast<EstadoTarefa>(e)), contagem[e]);
+
     ImGui::End();
 }
 
@@ -574,6 +651,96 @@ void desenharEditorTarefas(Simulador &simulador, std::string &mensagem)
         ImGui::PushStyleColor(ImGuiCol_Text, resultadoErro ? ImVec4(1.0f, 0.35f, 0.35f, 1.0f)
                                                            : ImVec4(0.35f, 0.85f, 0.45f, 1.0f));
         ImGui::TextWrapped("%s", resultado.c_str());
+        ImGui::PopStyleColor();
+    }
+
+    // ---------- Adicionar / remover tarefas (requisito 3.1: conjunto de tarefas configuravel) ----------
+    ImGui::SeparatorText("Conjunto de tarefas");
+    // O ID da tarefa selecionada e copiado ANTES de qualquer alteracao: adicionar uma tarefa
+    // realoca o vector de tarefas e deixaria a referencia 't' invalida no mesmo quadro.
+    const int idParaRemover = t.getId();
+    static int novoId = 0, novoIngresso = 0, novaDuracao = 1, novoPeriodo = 5, novoPrazo = 5;
+    static char novaCor[8] = "4C9BE8";
+    static int tickReferencia = -1;
+    static std::string resultadoConjunto;
+    static bool resultadoConjuntoErro = false;
+
+    // Sugere o proximo ID livre e, ao mudar de tick, leva o ingresso sugerido para o tick atual
+    // (uma tarefa nao pode chegar no passado). O usuario ainda pode digitar qualquer valor: se for
+    // invalido, a mensagem de erro explica o motivo.
+    if (novoId <= 0)
+    {
+        int maior = 0;
+        for (const auto &x : tarefas)
+            if (x.getId() > maior)
+                maior = x.getId();
+        novoId = maior + 1;
+    }
+    if (tickReferencia != simulador.getTickAtual())
+    {
+        if (novoIngresso < simulador.getTickAtual())
+            novoIngresso = simulador.getTickAtual();
+        tickReferencia = simulador.getTickAtual();
+    }
+
+    ImGui::TextUnformatted("Nova tarefa (periodica):");
+    ImGui::SetNextItemWidth(160.0f);
+    ImGui::InputInt("ID##novo", &novoId);
+    ImGui::SetNextItemWidth(160.0f);
+    ImGui::InputInt("Ingresso##novo", &novoIngresso);
+    ImGui::SetNextItemWidth(160.0f);
+    ImGui::InputInt("Duracao##novo", &novaDuracao);
+    ImGui::SetNextItemWidth(160.0f);
+    ImGui::InputInt("Periodo##novo", &novoPeriodo);
+    ImGui::SetNextItemWidth(160.0f);
+    ImGui::InputInt("Prazo##novo", &novoPrazo);
+    ImGui::SetNextItemWidth(160.0f);
+    ImGui::InputText("RRGGBB##novo", novaCor, sizeof(novaCor),
+                     ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase);
+
+    if (ImGui::Button("Adicionar tarefa"))
+    {
+        std::string erro;
+        if (simulador.adicionarTarefa(novoId, novaCor, novoIngresso, novaDuracao, novoPeriodo, novoPrazo, erro))
+        {
+            resultadoConjunto = "Tarefa " + std::to_string(novoId) + " adicionada.";
+            resultadoConjuntoErro = false;
+            novoId = 0; // sugere o proximo ID livre
+            ultimaTarefa = -1;
+        }
+        else
+        {
+            resultadoConjunto = "Nao foi possivel adicionar a tarefa: " + erro;
+            resultadoConjuntoErro = true;
+        }
+        mensagem = resultadoConjunto;
+    }
+
+    ImGui::SameLine();
+    const std::string rotuloRemover = "Remover tarefa " + std::to_string(idParaRemover);
+    if (ImGui::Button(rotuloRemover.c_str()))
+    {
+        std::string erro;
+        if (simulador.removerTarefa(idParaRemover, erro))
+        {
+            resultadoConjunto = "Tarefa " + std::to_string(idParaRemover) + " removida.";
+            resultadoConjuntoErro = false;
+            indiceTarefa = 0;
+            ultimaTarefa = -1;
+        }
+        else
+        {
+            resultadoConjunto = "Nao foi possivel remover a tarefa: " + erro;
+            resultadoConjuntoErro = true;
+        }
+        mensagem = resultadoConjunto;
+    }
+
+    if (!resultadoConjunto.empty())
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, resultadoConjuntoErro ? ImVec4(1.0f, 0.35f, 0.35f, 1.0f)
+                                                                   : ImVec4(0.35f, 0.85f, 0.45f, 1.0f));
+        ImGui::TextWrapped("%s", resultadoConjunto.c_str());
         ImGui::PopStyleColor();
     }
     ImGui::End();

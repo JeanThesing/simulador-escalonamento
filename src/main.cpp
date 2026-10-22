@@ -3,6 +3,7 @@
 #include "header/interfaceGrafica.hpp"
 #include "header/exportadorGantt.hpp"
 #include <filesystem>
+#include <algorithm>
 #include <time.h>
 using namespace std;
 
@@ -62,11 +63,20 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    int algoritmo = (config.algoritmo == "EDF") ? 1 : 0;
+    // Algoritmos disponiveis vem do registro (requisito 4.2): um algoritmo novo aparece aqui
+    // sozinho, sem alterar o main. 'algoritmo' e o indice do algoritmo escolhido nessa lista.
+    vector<string> nomesAlg = nomesAlgoritmos();
+    auto indiceDoAlgoritmo = [&](const string &nome)
+    {
+        auto it = find(nomesAlg.begin(), nomesAlg.end(), nome);
+        return it == nomesAlg.end() ? 0 : static_cast<int>(it - nomesAlg.begin());
+    };
+    int algoritmo = indiceDoAlgoritmo(config.algoritmo);
     int quantidadeCPUs = config.qtdeCpus;
     int quantum = config.quantum;
 
-    srand(67); // gera msm sequencia de num aleaotiros
+    // O sorteio de desempate nao usa mais rand(): e derivado do tick (ver Simulador::escalonarCPUs),
+    // entao nao ha semente global a configurar.
 
     // Cria a janela da aplicação com largura 1200 e altura 750 pixels.
     InitWindow(1600, 900, "Simulador de Escalonamento");
@@ -79,7 +89,7 @@ int main(int argc, char *argv[])
     rlImGuiSetup(true);
 
     // Cria o simulador com os valores lidos do arquivo de configuração.
-    Simulador simulador(quantidadeCPUs, quantum, algoritmo == 0 ? "RM" : "EDF");
+    Simulador simulador(quantidadeCPUs, quantum, config.algoritmo);
 
     /* ============
     Inicializa os componentes internos da simulação.
@@ -87,6 +97,10 @@ int main(int argc, char *argv[])
     simulador.definirTarefas(config.tarefas);
     simulador.reiniciar();
     //==============================
+
+    // Caminho digitado na interface para carregar outro arquivo de configuracao (requisito 3.3.4)
+    char caminhoNovo[512] = "";
+    snprintf(caminhoNovo, sizeof(caminhoNovo), "%s", caminho.c_str());
 
     string mensagem = ""; // resultado da ultima execucao completa, mostrado ao usuario
     for (const string &aviso : config.avisos)
@@ -117,7 +131,7 @@ int main(int argc, char *argv[])
         {
             simulador.retrocedeTick();
             // O retrocesso restaura também a configuração que estava ativa naquele tick.
-            algoritmo = simulador.getAlgoritmo() == "EDF" ? 1 : 0;
+            algoritmo = indiceDoAlgoritmo(simulador.getAlgoritmo());
             quantidadeCPUs = simulador.getQuantidadeCPUs();
             quantum = simulador.getQuantum();
             mensagem = ""; // apaga o resultado da execucao completa anterior
@@ -128,8 +142,16 @@ int main(int argc, char *argv[])
 
         if (ImGui::Button("Proximo tick"))
         {
+            const bool jaTerminada = simulador.todasTerminadas();
             simulador.avancaTick();
             mensagem = "";
+
+            // Requisito 2.4: ao final da simulacao a imagem do Gantt e gerada automaticamente,
+            // tambem no passo a passo (so na transicao "em andamento" -> "terminada", para nao
+            // regravar o arquivo a cada clique depois do fim).
+            if (!jaTerminada && simulador.todasTerminadas())
+                mensagem = exportarGantt(simulador,
+                                         "Simulacao concluida no tick " + to_string(simulador.getTickAtual()) + ". ");
         }
 
         ImGui::SameLine();
@@ -170,23 +192,28 @@ int main(int argc, char *argv[])
 
         bool configuracaoAlterada = false;
 
-        // Seleciona o algoritmo de escalonamento.
-        const char *algoritmos[] = {"RM", "EDF"};
-
+        // Seleciona o algoritmo de escalonamento (lista vinda do registro).
         ImGui::SetNextItemWidth(100);
 
-        if (ImGui::Combo("Algoritmo", &algoritmo, algoritmos, 2))
-            configuracaoAlterada = true;
+        if (ImGui::BeginCombo("Algoritmo", nomesAlg[algoritmo].c_str()))
+        {
+            for (int i = 0; i < static_cast<int>(nomesAlg.size()); i++)
+                if (ImGui::Selectable(nomesAlg[i].c_str(), i == algoritmo))
+                {
+                    algoritmo = i;
+                    configuracaoAlterada = true;
+                }
+            ImGui::EndCombo();
+        }
 
         ImGui::SameLine();
 
-        // Define a quantidade maxima de CPUs conforme o arquivo de configuracao.
+        // Quantidade de CPUs configuravel pelo usuario de 1 ate N (requisito geral 2). N e o maior
+        // entre o valor do arquivo e LIMITE_CPUS: o arquivo e so o valor inicial, nao um teto.
         ImGui::SetNextItemWidth(100);
 
-        int maxCPUs = config.qtdeCpus;
-
-        if (maxCPUs < 1)
-            maxCPUs = 1;
+        constexpr int LIMITE_CPUS = 64;
+        int maxCPUs = max(config.qtdeCpus, LIMITE_CPUS);
 
         if (ImGui::SliderInt("CPUs", &quantidadeCPUs, 1, maxCPUs))
             configuracaoAlterada = true;
@@ -202,11 +229,40 @@ int main(int argc, char *argv[])
         // A nova configuração passa a valer a partir do próximo tick executado.
         if (configuracaoAlterada)
         {
-            simulador.definirAlgoritmo(algoritmo == 0 ? "RM" : "EDF");
+            simulador.definirAlgoritmo(nomesAlg[algoritmo]);
             simulador.definirQuantidadeCPUs(quantidadeCPUs);
             simulador.definirQuantum(quantum);
             mensagem = "Configuracao atualizada no tick " + to_string(simulador.getTickAtual()) +
                        ". O historico anterior foi preservado.";
+        }
+
+        // Carregar outro arquivo de configuracao sem fechar o programa (requisito 3.3.4):
+        // aceita qualquer nome e qualquer local do sistema de arquivos. Se o arquivo tiver
+        // erros, a simulacao atual e mantida e os erros sao mostrados.
+        ImGui::Separator();
+        ImGui::SetNextItemWidth(420);
+        ImGui::InputText("Arquivo de configuracao", caminhoNovo, sizeof(caminhoNovo));
+        ImGui::SameLine();
+        if (ImGui::Button("Carregar"))
+        {
+            Configuracao nova;
+            const bool carregou = carregarConfiguracao(caminhoNovo, nova);
+            string texto;
+            for (const string &erroCfg : nova.erros)
+                texto += "Erro: " + erroCfg + "\n";
+            for (const string &aviso : nova.avisos)
+                texto += "Aviso: " + aviso + "\n";
+            if (carregou)
+            {
+                config = nova;
+                simulador.reconfigurar(config.qtdeCpus, config.quantum, config.algoritmo, config.tarefas);
+                algoritmo = indiceDoAlgoritmo(config.algoritmo);
+                quantidadeCPUs = simulador.getQuantidadeCPUs();
+                quantum = simulador.getQuantum();
+                mensagem = "Configuracao carregada de " + string(caminhoNovo) + ".\n" + texto;
+            }
+            else
+                mensagem = "Nao foi possivel carregar a configuracao (a simulacao atual foi mantida):\n" + texto;
         }
 
         // Encerra a janela de controles.
@@ -217,6 +273,7 @@ int main(int argc, char *argv[])
         desenharTarefas(simulador);
         desenharEditorTarefas(simulador, mensagem);
         desenharCPUs(simulador);
+        desenharEstadoSistema(simulador);
         desenharLegenda(simulador);
 
         // Finaliza o desenho dos componentes ImGui.
