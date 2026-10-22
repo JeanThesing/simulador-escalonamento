@@ -2,12 +2,10 @@
 #include <iostream>
 #include "tarefa.hpp"
 #include "cpu.hpp"
-#include "relogio.hpp"
 #include "escalonador.hpp"
 #include "escalonadorRm.hpp"
 #include "escalonadorEdf.hpp"
 #include "registroEscalonadores.hpp"
-#include <queue>
 #include <vector>
 #include <string>
 #include <memory>
@@ -25,6 +23,19 @@ struct EdicaoTarefa
     std::string cor;
 };
 
+// Relogio global do sistema simulado (requisito 1.1). A passagem do tempo e discreta, em ticks,
+// e nao esta atrelada ao tempo real: o simulador pode avancar ou voltar o tick sem esperar.
+// Fica neste arquivo porque so o Simulador o usa e a classe e pequena (metodos inline).
+class Relogio
+{
+private:
+    int tick = 0;
+
+public:
+    void incrementa() { tick++; }                // avanca um tick (usado em avancaTick)
+    int getTick() const { return tick; }
+    void setTick(int novoTick) { tick = novoTick; } // usado ao retroceder, para restaurar o tick salvo
+};
 
 /*No entanto, com objetivo de terminar a simulação, assume-se que uma
 tarefa periódica termina após ela ter executado 10 vezes.*/
