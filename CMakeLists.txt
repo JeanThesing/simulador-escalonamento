@@ -33,7 +33,6 @@ add_subdirectory(external/raylib)
 
 set(CORE_SOURCES
     src/cpu.cpp
-    src/relogio.cpp
     src/tarefa.cpp
     src/simulador.cpp
     src/leitorConfig.cpp
