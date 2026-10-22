@@ -129,6 +129,10 @@ void Simulador::retrocedeTick()
     filaDeProntas = estado.filaDeProntas;
     eventos = estado.eventos;
     quantum = estado.quantum;
+    qtde_cpus = estado.quantidadeCPUs > 0 ? estado.quantidadeCPUs : static_cast<int>(estado.cpus.size());
+    algoritmo_escalonamento = estado.algoritmo.empty() ? algoritmo_escalonamento : estado.algoritmo;
+    escalonador.reset();
+    criaEscalonador();
 
     // Reconstrói as CPUs usando os IDs das tarefas salvos.
     cpus.clear();
@@ -316,6 +320,8 @@ void Simulador::salvaHistoricoTick()
     estado.tick = relogio.getTick();
     estado.tarefas = tarefas;
     estado.quantum = quantum;
+    estado.quantidadeCPUs = qtde_cpus;
+    estado.algoritmo = algoritmo_escalonamento;
     estado.filaDeProntas = filaDeProntas;
     estado.eventos = eventos; // eventos ocorridos ate este tick
 
@@ -452,22 +458,78 @@ void Simulador::definirTarefas(const std::vector<Tarefa> &tarefas)
     this->tarefas = tarefasIniciais;
 }
 
+void Simulador::atualizarHistoricoAtual()
+{
+    // A configuração é uma alteração no instante atual, não um novo tick.
+    // Atualiza apenas o snapshot do tick corrente; os snapshots anteriores ficam intactos.
+    if (historico.empty())
+        return;
+
+    EstadoSistema &estado = historico.back();
+    estado.tick = relogio.getTick();
+    estado.tarefas = tarefas;
+    estado.cpus.clear();
+    for (const CPU &cpu : cpus)
+    {
+        EstadoCPU salva;
+        salva.id = cpu.getId();
+        salva.idTarefaAtual = cpu.getTarefaAtual() ? cpu.getTarefaAtual()->getId() : -1;
+        salva.ligado = cpu.getLigado();
+        salva.emUso = cpu.getEmUso();
+        salva.tempoDesligado = cpu.getTempoDesligado();
+        estado.cpus.push_back(salva);
+    }
+    estado.quantum = quantum;
+    estado.quantidadeCPUs = qtde_cpus;
+    estado.algoritmo = algoritmo_escalonamento;
+    estado.filaDeProntas = filaDeProntas;
+    estado.eventos = eventos;
+}
+
 void Simulador::definirAlgoritmo(const std::string &algoritmo)
 {
+    if (algoritmo != "RM" && algoritmo != "EDF")
+        return;
+    if (algoritmo_escalonamento == algoritmo)
+        return;
+
     algoritmo_escalonamento = algoritmo;
+    // Troca o escalonador sem reiniciar o relógio, as tarefas ou o Gantt.
+    escalonador.reset();
+    criaEscalonador();
+    atualizarHistoricoAtual();
 }
 
 void Simulador::definirQuantidadeCPUs(int quantidade)
 {
-    // Permite configurar a quantidade de CPUs independentemente do numero de tarefas.
-    if (quantidade >= 1)
-        qtde_cpus = quantidade;
+    if (quantidade < 1 || quantidade == qtde_cpus)
+        return;
+
+    // Se CPUs forem removidas, suas tarefas voltam à fila de prontas sem consumir tempo.
+    if (quantidade < static_cast<int>(cpus.size()))
+    {
+        for (size_t i = static_cast<size_t>(quantidade); i < cpus.size(); ++i)
+            cpus[i].liberar();
+        cpus.erase(cpus.begin() + quantidade, cpus.end());
+    }
+    else
+    {
+        for (int i = static_cast<int>(cpus.size()); i < quantidade; ++i)
+            cpus.emplace_back(i);
+    }
+
+    qtde_cpus = quantidade;
+    atualizaFilaDeProntas();
+    atualizarHistoricoAtual();
 }
 
 void Simulador::definirQuantum(int novoQuantum)
 {
-    if (novoQuantum >= 1 && novoQuantum <= 1000)
+    if (novoQuantum >= 1 && novoQuantum <= 1000 && quantum != novoQuantum)
+    {
         quantum = novoQuantum;
+        atualizarHistoricoAtual();
+    }
 }
 
 // um retrocesso/avanço restaure também a alteração manual feita pelo usuário.

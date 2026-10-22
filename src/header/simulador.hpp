@@ -45,6 +45,7 @@ private:
     std::vector<int> filaDeProntas = std::vector<int>(); // fila com o ids das tarefas prontas (vector para poder ordenar as tarefas de acordo com o algoritmo de escalonamento)
     std::vector<std::vector<int>> historicoGantt;
     void salvarTickGantt();
+    void atualizarHistoricoAtual();
     std::vector<Tarefa> tarefasIniciais; // tarefas lidas do arquivo de configuracao
     std::vector<EventoGantt> eventos;    // eventos a serem mostrados no Gantt (chegada, termino, prazo perdido) no instante do tick
 
@@ -63,6 +64,7 @@ public:
     // Permite editar uma tarefa no estado atual; retorna false se a alteração for inválida.
     bool editarTarefa(int id, const EdicaoTarefa &edicao, std::string &erro);
     int getQuantum() const { return quantum; }
+    int getQuantidadeCPUs() const { return qtde_cpus; }
 
     void avancaTick();
     void retrocedeTick();         // funcionara com base no historico do sistema (a ser implementado)

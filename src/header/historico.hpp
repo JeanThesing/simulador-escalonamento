@@ -52,4 +52,6 @@ struct EstadoSistema // salva o estado do sistema em determinado tick, para perm
     std::vector<int> filaDeProntas;
 
     int quantum = 0;
+    int quantidadeCPUs = 0;
+    std::string algoritmo = "RM";
 };

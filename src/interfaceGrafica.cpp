@@ -121,7 +121,10 @@ void desenharGantt(const Simulador &simulador)
 
     // Calcula o espaço necessário para o gráfico.
     float largura = larguraRotulo + historico.size() * larguraTick;
-    float altura = 30.0f + (tarefas.size() + cpus.size()) * alturaLinha;
+    size_t maxCPUsHistorico = cpus.size();
+    for (const EstadoSistema &estado : historicoEstados)
+        maxCPUsHistorico = std::max(maxCPUsHistorico, estado.cpus.size());
+    float altura = 30.0f + (tarefas.size() + maxCPUsHistorico) * alturaLinha;
 
     // Reserva espaço para permitir a exibição e rolagem do gráfico.
     ImGui::Dummy(ImVec2(largura, altura));
@@ -271,12 +274,12 @@ void desenharGantt(const Simulador &simulador)
     }
 
     // Uma linha por CPU: marca os períodos em que ela ficou desligada (sem tarefa).
-    for (size_t c = 0; c < cpus.size(); ++c)
+    for (size_t c = 0; c < maxCPUsHistorico; ++c)
     {
         float y = inicio.y + 30 + (tarefas.size() + c) * alturaLinha;
 
         char nomeCPU[16];
-        std::snprintf(nomeCPU, sizeof(nomeCPU), "CPU %d", cpus[c].getId());
+        std::snprintf(nomeCPU, sizeof(nomeCPU), "CPU %zu", c);
         draw->AddText(ImVec2(inicio.x, y + 8), IM_COL32(230, 230, 230, 255), nomeCPU);
 
         // Junta ticks seguidos desligados em uma única faixa, mostrando a duração do período.
@@ -284,7 +287,8 @@ void desenharGantt(const Simulador &simulador)
         while (t < historico.size())
         {
             // -1 no histórico = CPU sem tarefa neste tick = desligada
-            bool desligada = c < historico[t].size() && historico[t][c] == -1;
+            bool cpuExistiaNoTick = t < historicoEstados.size() && c < historicoEstados[t].cpus.size();
+            bool desligada = cpuExistiaNoTick && c < historico[t].size() && historico[t][c] == -1;
 
             if (!desligada)
             {
@@ -296,6 +300,8 @@ void desenharGantt(const Simulador &simulador)
             size_t inicioFaixa = t;
 
             while (t < historico.size() &&
+                   t < historicoEstados.size() &&
+                   c < historicoEstados[t].cpus.size() &&
                    c < historico[t].size() &&
                    historico[t][c] == -1)
             {
@@ -330,31 +336,28 @@ void desenharTarefas(const Simulador &simulador)
 {
     ImGui::Begin("Tarefas");
 
-    // BeginTable() cria uma tabela com quatro colunas.
-    // As opções ativam bordas, alternância de cor das linhas e redimensionamento das colunas.
+    // A tabela apresenta o estado atual e os parâmetros temporais de cada tarefa.
     if (ImGui::BeginTable(
             "TabelaTarefas",
-            4,
+            7,
             ImGuiTableFlags_Borders |
                 ImGuiTableFlags_RowBg |
                 ImGuiTableFlags_Resizable))
     {
-        // Define os nomes das colunas.
         ImGui::TableSetupColumn("ID");
         ImGui::TableSetupColumn("Estado");
+        ImGui::TableSetupColumn("Ingresso");
         ImGui::TableSetupColumn("Duracao");
+        ImGui::TableSetupColumn("Periodo");
+        ImGui::TableSetupColumn("Prazo");
         ImGui::TableSetupColumn("Restante");
 
-        // Desenha o cabeçalho da tabela.
         ImGui::TableHeadersRow();
 
-        // Percorre as tarefas reais armazenadas no simulador.
         for (const auto &tarefa : simulador.getTarefas())
         {
-            // Cria uma nova linha para a tarefa atual.
             ImGui::TableNextRow();
 
-            // TableNextColumn() avança para a próxima coluna da linha.
             ImGui::TableNextColumn();
             ImGui::Text("%d", tarefa.getId());
 
@@ -362,7 +365,16 @@ void desenharTarefas(const Simulador &simulador)
             ImGui::Text("%s", nomeEstado(tarefa.getEstado()));
 
             ImGui::TableNextColumn();
+            ImGui::Text("%d", tarefa.getIngresso());
+
+            ImGui::TableNextColumn();
             ImGui::Text("%d", tarefa.getDuracao());
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", tarefa.getPeriodo());
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", tarefa.getPrazo());
 
             ImGui::TableNextColumn();
             ImGui::Text("%d", tarefa.getTempoRestante());
@@ -423,7 +435,6 @@ void desenharLegenda(const Simulador &simulador)
     ImGui::End();
 }
 
-// Editor manual exigido pelos requisitos 1.5.2 e 3.4.
 void desenharEditorTarefas(Simulador &simulador, std::string &mensagem)
 {
     static int indiceTarefa = 0;

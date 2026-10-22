@@ -116,6 +116,10 @@ int main(int argc, char *argv[])
         if (ImGui::Button("Voltar tick"))
         {
             simulador.retrocedeTick();
+            // O retrocesso restaura também a configuração que estava ativa naquele tick.
+            algoritmo = simulador.getAlgoritmo() == "EDF" ? 1 : 0;
+            quantidadeCPUs = simulador.getQuantidadeCPUs();
+            quantum = simulador.getQuantum();
             mensagem = ""; // apaga o resultado da execucao completa anterior
         }
 
@@ -194,16 +198,15 @@ int main(int argc, char *argv[])
         if (ImGui::SliderInt("Quantum", &quantum, 1, 1000))
             configuracaoAlterada = true;
 
-        // Aplica as alterações e reinicia a simulação.
+        // Aplica as alterações no tick atual, sem apagar o histórico já desenhado.
+        // A nova configuração passa a valer a partir do próximo tick executado.
         if (configuracaoAlterada)
         {
-            simulador.definirAlgoritmo(
-                algoritmo == 0 ? "RM" : "EDF");
-
+            simulador.definirAlgoritmo(algoritmo == 0 ? "RM" : "EDF");
             simulador.definirQuantidadeCPUs(quantidadeCPUs);
             simulador.definirQuantum(quantum);
-
-            simulador.reiniciar();
+            mensagem = "Configuracao atualizada no tick " + to_string(simulador.getTickAtual()) +
+                       ". O historico anterior foi preservado.";
         }
 
         // Encerra a janela de controles.
