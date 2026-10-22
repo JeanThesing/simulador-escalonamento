@@ -40,3 +40,7 @@ void desenharLegenda(const Simulador &simulador);
 // Desenha o painel do "debugger" do sistema (requisito 1.5.1): tick, algoritmo, quantum,
 // fila de prontas global, tarefa em cada CPU e contagem de tarefas por estado.
 void desenharEstadoSistema(const Simulador &simulador);
+
+// Define a posição/tamanho PADRÃO da PRÓXIMA janela ImGui (chamar logo antes do ImGui::Begin).
+// Só vale quando não há layout salvo no imgui.ini.
+void posicionarJanela(float x, float y, float largura, float altura);

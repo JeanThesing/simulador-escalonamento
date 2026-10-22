@@ -1,6 +1,16 @@
 #include "header/interfaceGrafica.hpp"
 #include "header/exportadorGantt.hpp"
 
+// Posição e tamanho PADRÃO de cada janela (a janela do programa tem 1600x900).
+// Usa ImGuiCond_FirstUseEver: o valor só é aplicado quando a janela NÃO tem layout salvo no
+// imgui.ini. Se o imgui.ini existir (o ImGui o grava ao fechar o programa), o layout salvo
+// pelo usuário prevalece; se não existir ou for apagado, o layout abaixo é usado.
+void posicionarJanela(float x, float y, float largura, float altura)
+{
+    ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(largura, altura), ImGuiCond_FirstUseEver);
+}
+
 // Cor da célula em que a tarefa não executou naquele tick (mesma no Gantt e na legenda).
 static const ImU32 COR_SEM_EXECUCAO = IM_COL32(24, 27, 34, 255);
 
@@ -46,6 +56,7 @@ const char *nomeEstado(EstadoTarefa estado)
 // Desenha a tabela com o estado de cada CPU (ligada/desligada, tarefa atual e tempo desligada).
 void desenharCPUs(const Simulador &simulador)
 {
+    posicionarJanela(1094, 17, 491, 133);
     ImGui::Begin("CPUs");
 
     if (ImGui::BeginTable(
@@ -97,6 +108,7 @@ void desenharGantt(const Simulador &simulador)
     const auto &cpus = simulador.getCPUs();
 
     // Cria a janela do gráfico.
+    posicionarJanela(9, 152, 796, 504);
     ImGui::Begin("Grafico de Gantt");
 
     // Exibe o tick atual da simulação.
@@ -334,6 +346,7 @@ void desenharGantt(const Simulador &simulador)
 // Desenha uma tabela com informações atuais das tarefas.
 void desenharTarefas(const Simulador &simulador)
 {
+    posicionarJanela(812, 153, 776, 126);
     ImGui::Begin("Tarefas");
 
     // A tabela apresenta o TCB de cada tarefa: configuracao (ingresso, duracao, periodo, prazo)
@@ -424,7 +437,7 @@ void desenharTarefas(const Simulador &simulador)
 // Painel do sistema: o que um debugger mostraria sobre o estado global (requisito 1.5.1).
 void desenharEstadoSistema(const Simulador &simulador)
 {
-    ImGui::SetNextWindowSize(ImVec2(330, 300), ImGuiCond_FirstUseEver);
+    posicionarJanela(813, 282, 775, 222);
     ImGui::Begin("Estado do sistema");
 
     ImGui::Text("Tick atual: %d", simulador.getTickAtual());
@@ -470,8 +483,7 @@ void desenharEstadoSistema(const Simulador &simulador)
 // sorteio); a imagem exportada tem a sua própria legenda com os mesmos elementos.
 void desenharLegenda(const Simulador &simulador)
 {
-    ImGui::SetNextWindowPos(ImVec2(900, 40), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(280, 260), ImGuiCond_FirstUseEver);
+    posicionarJanela(5, 660, 801, 233);
     ImGui::Begin("Legenda");
 
     ImDrawList *draw = ImGui::GetWindowDrawList();
@@ -531,7 +543,7 @@ void desenharEditorTarefas(Simulador &simulador, std::string &mensagem)
         ultimoTick = simulador.getTickAtual();
     }
 
-    ImGui::SetNextWindowSize(ImVec2(430, 470), ImGuiCond_FirstUseEver);
+    posicionarJanela(812, 508, 778, 386);
     ImGui::Begin("Editar tarefa");
     if (tarefas.empty())
     {
