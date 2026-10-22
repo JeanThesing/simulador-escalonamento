@@ -122,6 +122,7 @@ int main(int argc, char *argv[])
         rlImGuiBegin();
 
         // Cria a janela que contém os controles da simulação.
+        posicionarJanela(9, 16, 1078, 135);
         ImGui::Begin("Controle da simulacao");
 
         ImGui::Text("Tick atual: %d", simulador.getTickAtual());
