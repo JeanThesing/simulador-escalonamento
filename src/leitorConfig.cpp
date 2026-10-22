@@ -24,6 +24,21 @@ static std::string removerEspacos(const std::string &texto)
     return texto.substr(inicio, fim - inicio + 1);
 }
 
+// Remove os comentarios que comecam com # sem interferir nas cores hexadecimais
+static std::string removerComentarios(std::string linha)
+{
+    for (size_t i = 0; i < linha.size(); i++)
+    {
+        if (linha[i] == '#' &&
+            (i == 0 || std::isspace(static_cast<unsigned char>(linha[i - 1]))))
+        {
+            return linha.substr(0, i);
+        }
+    }
+
+    return linha;
+}
+
 // converte para maiusculo (strings do arquivo nao diferenciam maiusculas/minusculas - req. 3.3.2)
 static std::string converterMaiusculas(std::string texto)
 {
@@ -80,8 +95,7 @@ static bool lerInt(const std::string &texto, int &resultado)
     auto conversao = std::from_chars(
         texto.data(),
         texto.data() + texto.size(),
-        resultado
-    );
+        resultado);
     // verifica se o número e valido e se não sobraram caracteres
     return conversao.ec == std::errc() &&
            conversao.ptr == texto.data() + texto.size();
@@ -289,6 +303,10 @@ bool carregarConfiguracao(const std::string &caminho, Configuracao &config)
 
         // remove espacos desnecessarios
         linha = removerEspacos(linha);
+
+        // remove comentarios
+        linha = removerComentarios(linha);
+
         // ignora linhas vazias
         if (linha.empty())
             continue;
